@@ -48,7 +48,7 @@ const Container = styled.div`
   }
   .overlay h1 {
     color: #fff;
-    font-size: 3.417vw;
+    font-size: clamp(2rem, 4vw, 3.417vw);
     margin-bottom: 16px;
     text-align: center;
     font-weight: 300;
@@ -60,7 +60,7 @@ const Container = styled.div`
   }
   .overlay p {
     color: #d9d9d9;
-    font-size: 1vw;
+    font-size: clamp(1rem, 2vw, 1.2vw);
     max-width: 36.458vw;
     text-align: center;
     margin-bottom: 32px;
@@ -76,6 +76,15 @@ const Container = styled.div`
     display: block;
     border-radius: 24px;
   }
+
+  @media (max-width: 900px) {
+    padding-top: 16px;
+    margin-bottom: 24px;
+    .overlay h1,
+    .overlay p {
+      max-width: 90vw;
+    }
+  }
 `;
 
 const ImageContainer = styled.div`
@@ -86,6 +95,28 @@ const ImageContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+
+  @media (max-width: 900px) {
+    width: 100vw;
+    max-width: 100vw;
+    min-width: 0;
+    padding: 0;
+  }
+
+  @media (max-width: 650px) {
+    .overlay {
+      padding-top: 20px;
+    }
+    .overlay h1 {
+      font-size: 1.3rem;
+      max-width: 98vw;
+    }
+    .overlay p {
+      font-size: 0.95rem;
+      max-width: 98vw;
+      margin-bottom: 20px;
+    }
+  }
 `;
 
 const Logo = styled.img`

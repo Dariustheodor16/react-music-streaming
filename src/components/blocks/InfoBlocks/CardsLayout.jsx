@@ -25,6 +25,11 @@ const Container = styled.div`
   justify-content: center;
   align-items: center;
   gap: 20px;
+
+  @media (max-width: 800px) {
+    flex-direction: column;
+    gap: 16px;
+  }
 `;
 
 export default CardsLayout;

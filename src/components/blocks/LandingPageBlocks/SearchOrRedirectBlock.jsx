@@ -7,7 +7,9 @@ const SearchOrRedirectBlock = () => {
   const navigate = useNavigate();
   return (
     <Container>
-      <PrimaryInput></PrimaryInput>
+      <div className="input-wrapper">
+        <PrimaryInput />
+      </div>
       <p>Or</p>
       <PrimaryButton onClick={() => navigate("/info")}>
         Claim Your Stage
@@ -23,9 +25,37 @@ const Container = styled.div`
   justify-content: center;
   margin-bottom: 30px;
 
+  .input-wrapper {
+    width: 32vw;
+    max-width: 500px;
+    min-width: 180px;
+    margin-bottom: 16px;
+  }
+
+  input {
+    width: 100%;
+    height: clamp(38px, 4vw, 56px);
+    font-size: clamp(1rem, 1.2vw, 1.1rem);
+    border-radius: 0.938vw;
+  }
+
   p {
     color: #d9d9d9;
     font-size: 1.25vw;
+    margin: 8px 0;
+  }
+
+  @media (max-width: 600px) {
+    .input-wrapper {
+      width: 90vw;
+      min-width: 0;
+    }
+    input {
+      font-size: 1rem;
+    }
+    p {
+      font-size: 1rem;
+    }
   }
 `;
 

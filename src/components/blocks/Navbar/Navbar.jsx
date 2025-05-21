@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import logo from "../../../assets/logo.png";
+import miniLogo from "../../../assets/mini-logo.svg";
 import PrimaryInput from "../../ui/Inputs/PrimaryInput";
 import PrimaryButton from "../../ui/Buttons/PrimaryButton";
 import { Link } from "react-router-dom";
@@ -8,8 +9,9 @@ const Navbar = () => {
   return (
     <Container>
       <NavbarContainer>
-        <Link to={"/"}>
-          <img src={logo}></img>
+        <Link to={"/"} className="logo-link">
+          <img src={logo} alt="Logo" className="main-logo" />
+          <img src={miniLogo} alt="Mini Logo" className="mini-logo" />
         </Link>
         <div className="anchorContainer">
           <a href="#">Home</a>
@@ -32,12 +34,45 @@ const Navbar = () => {
 const Container = styled.div`
   display: flex;
   justify-content: center;
-  width: 100%;
+  width: 100vw;
+  height: 50px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #232323;
 
-  img {
-    width: 10.156vw;
-    height: 2.865vw;
+  .logo-link {
+    display: flex;
+    align-items: center;
+  }
+
+  .main-logo {
+    width: 130px;
+    height: 37px;
     object-fit: contain;
+    display: block;
+  }
+  .mini-logo {
+    display: none;
+    width: 40px;
+    height: 40px;
+  }
+
+  @media (max-width: 1190px) {
+    .main-logo {
+      width: 120px;
+      height: 34px;
+    }
+  }
+  @media (max-width: 600px) {
+    .main-logo {
+      display: none;
+    }
+    .mini-logo {
+      display: block;
+      width: 36px;
+      height: 36px;
+    }
   }
 
   .anchorContainer {
@@ -50,7 +85,7 @@ const Container = styled.div`
   }
 
   .anchorContainer a {
-    font-size: 1.25vw;
+    font-size: 24px;
     text-decoration: none;
     color: #fff;
     font-weight: 300;
@@ -64,23 +99,25 @@ const Container = styled.div`
     flex-direction: row;
     gap: 11px;
     align-items: center;
-    margin-left: 1.563vw;
+    margin-left: 15px;
   }
 
   .loginContainer a {
-    font-size: 0.781vw;
+    font-size: 15px;
     text-decoration: none;
     color: #fff;
-    font-weight: 300;
+    font-weight: 500;
+    white-space: nowrap;
+    margin-right: 12px;
   }
 
   .navbar-primary-btn {
     width: 120px;
     height: 34px;
-    font-size: 1rem;
+    font-size: 16px;
     text-align: center;
-    padding: 0 24px;
-    border-radius: 0.313vw;
+    padding: 0 16px;
+    border-radius: 4px;
     box-sizing: border-box;
     display: flex;
     align-items: center;
@@ -90,28 +127,55 @@ const Container = styled.div`
 
 const NavbarContainer = styled.div`
   display: flex;
+  justify-content: space-between;
   align-items: center;
   width: 100%;
   max-width: 1190px;
   margin: 0 auto;
   min-width: 0;
+  padding: 0 16px;
 `;
 
 const StyledPrimaryInput = styled.div`
-  width: 26.042vw;
-  height: 1.771vw;
+  width: 500px;
+  min-width: 80px;
+  max-width: 500px;
   display: flex;
   align-items: center;
 
   input {
-    border-radius: 0.469vw;
+    border-radius: 8px;
     height: 34px;
-    min-height: 34px;
+    min-height: 28px;
     max-height: 34px;
     width: 100%;
-    font-size: 1rem;
+    font-size: 16px;
     &::placeholder {
-      font-size: 0.833vw;
+      font-size: 14px;
+    }
+  }
+  @media (max-width: 1160px) {
+    width: 380px;
+  }
+  @media (max-width: 1070px) {
+    width: 310px;
+  }
+  @media (max-width: 990px) {
+    width: 210px;
+  }
+
+  @media (max-width: 800px) {
+    width: 320px;
+    input {
+      height: 28px;
+      font-size: 15px;
+    }
+  }
+  @media (max-width: 600px) {
+    width: 220px;
+    input {
+      height: 24px;
+      font-size: 14px;
     }
   }
 `;

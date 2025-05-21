@@ -32,6 +32,19 @@ const Container = styled.div`
     color: #d9d9d9;
     text-align: left;
   }
+
+  @media (max-width: 800px) {
+    width: 90vw;
+    max-width: 100vw;
+    min-width: 0;
+    border-radius: 1.2rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    h1,
+    p {
+      text-align: center;
+    }
+  }
 `;
 
 export default InfoTextCard;

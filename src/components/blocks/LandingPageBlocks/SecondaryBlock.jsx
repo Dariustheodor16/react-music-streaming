@@ -50,7 +50,7 @@ const Container = styled.div`
   }
   .overlay h1 {
     color: #fff;
-    font-size: 3.417vw;
+    font-size: clamp(1.5rem, 3.5vw, 3.417vw);
     margin-bottom: 16px;
     text-align: center;
     font-weight: 300;
@@ -59,7 +59,7 @@ const Container = styled.div`
   }
   .overlay p {
     color: #d9d9d9;
-    font-size: 1vw;
+    font-size: clamp(1rem, 2vw, 1.2vw);
     max-width: 36.458vw;
     text-align: center;
     margin-bottom: 32px;
@@ -70,31 +70,45 @@ const Container = styled.div`
     justify-content: center;
     align-items: center;
     flex-direction: column;
+    padding: 2rem 0;
   }
   .cta-overlay h1 {
     color: #fff;
-    font-size: 2.5vw;
+    font-size: clamp(1.2rem, 2.5vw, 2.5vw);
     margin-bottom: 16px;
     text-align: center;
     font-weight: 300;
   }
   .cta-overlay p {
     color: #d9d9d9;
-    font-size: 1vw;
+    font-size: clamp(1rem, 1.5vw, 1.2vw);
     font-weight: 300;
+    text-align: center;
+    margin-bottom: 18px;
   }
   .login-redirect {
     display: flex;
     align-items: center;
+    margin-top: 10px;
   }
   .login-redirect p {
     color: #d9d9d9;
-    font-size: 0.781vw;
+    font-size: clamp(0.9rem, 1vw, 1rem);
   }
   .login-redirect a {
     color: #ff4343;
-    font-size: 0.781vw;
+    font-size: clamp(0.9rem, 1vw, 1rem);
     margin-left: 12px;
+  }
+
+  @media (max-width: 900px) {
+    padding-top: 16px;
+    .overlay h1,
+    .overlay p,
+    .cta-overlay h1,
+    .cta-overlay p {
+      max-width: 90vw;
+    }
   }
 `;
 
@@ -106,6 +120,20 @@ const ImageContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+
+  @media (max-width: 900px) {
+    width: 100vw;
+    max-width: 100vw;
+    min-width: 0;
+    padding: 0;
+  }
+
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 24px;
+  }
 `;
 
 export default SecondaryBlock;

@@ -1,13 +1,14 @@
 import styled from "styled-components";
 import SearchIcon from "../../../assets/icons/search.svg?react";
 
-const PrimaryInput = () => {
+const PrimaryInput = ({ placeholder = "Search for songs, artists, albums", ...props }) => {
   return (
     <Container>
       <StyledInput
         type="text"
-        placeholder="Search for songs, artists, albums"
-      ></StyledInput>
+        placeholder={placeholder}
+        {...props}
+      />
       <IconWrapper>
         <SearchIcon />
       </IconWrapper>
@@ -32,6 +33,9 @@ const StyledInput = styled.input`
   width: 100%;
   text-align: left;
   cursor: pointer;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
   &::placeholder {
     font-size: 16px;
     text-align: left;
