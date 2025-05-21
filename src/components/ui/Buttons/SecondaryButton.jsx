@@ -14,6 +14,9 @@ const Container = styled.button`
   height: 2.813vw;
   text-align: center;
   cursor: pointer;
+  &:hover {
+    background-color: #923131;
+  }
 `;
 
 export default SecondaryButton;

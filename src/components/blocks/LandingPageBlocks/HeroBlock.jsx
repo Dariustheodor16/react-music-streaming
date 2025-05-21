@@ -28,12 +28,12 @@ const HeroBlock = () => (
 );
 
 const Container = styled.div`
-  min-height: 100vh;
   width: 100vw;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   padding-top: 30px;
+  margin-bottom: 50px;
 
   .overlay {
     position: absolute;

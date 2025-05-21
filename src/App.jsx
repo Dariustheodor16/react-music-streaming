@@ -1,14 +1,15 @@
 import { useState } from "react";
-import HeroBlock from "./components/blocks/LandingPageBlocks/HeroBlock";
-import SecondaryBlock from "./components/blocks/LandingPageBlocks/SecondaryBlock";
-import SearchOrRedirectBlock from "./components/blocks/LandingPageBlocks/SearchOrRedirectBlock";
+import { Routes, Route } from "react-router-dom";
+import Home from "./pages/Home";
+import Info from "./pages/Info";
 
 function App() {
   return (
     <>
-      <HeroBlock></HeroBlock>
-      <SearchOrRedirectBlock></SearchOrRedirectBlock>
-      <SecondaryBlock></SecondaryBlock>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/info" element={<Info />}></Route>
+      </Routes>
     </>
   );
 }

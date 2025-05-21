@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
-const PrimaryButton = ({ children }) => {
-  return <Container>{children}</Container>;
+const PrimaryButton = ({ children, ...props }) => {
+  return <Container {...props}>{children}</Container>;
 };
 
 const Container = styled.button`
@@ -14,6 +14,10 @@ const Container = styled.button`
   height: 2.813vw;
   text-align: center;
   cursor: pointer;
+  &:hover {
+    background-color: #9c9c9c;
+    color: #fff;
+  }
 `;
 
 export default PrimaryButton;
