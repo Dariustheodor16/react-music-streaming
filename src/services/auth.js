@@ -10,7 +10,7 @@ export const registerWithEmailAndPassword = async (email, password) => {
   return await createUserWithEmailAndPassword(auth, email, password);
 };
 
-export const signInWithEmailAndPassword = async (email, password) => {
+export const loginWithEmailAndPassword = async (email, password) => {
   return await signInWithEmailAndPassword(auth, email, password);
 };
 

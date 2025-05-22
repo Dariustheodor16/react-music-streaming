@@ -1,21 +1,84 @@
 import styled from "styled-components";
+import React from "react";
+import { Navigate } from "react-router-dom";
+import {
+  loginWithEmailAndPassword,
+  registerWithEmailAndPassword,
+  signInWithGoogle,
+} from "../../../services/auth";
+import { useAuth } from "../../../services/authContext.jsx";
 import { useState } from "react";
 import SecondaryInput from "../../ui/Inputs/SecondaryInput";
 import PrimaryButton from "../../ui/Buttons/PrimaryButton";
 import googleIcon from "../../../assets/icons/google.svg";
 import CloseIcon from "../../../assets/icons/close.svg?react";
 
-const LoginModal = ({ onClose, initialRegister = false }) => {
+const LoginModal = ({ onClose, initialRegister = false, onRegistered }) => {
   const [isRegister, setIsRegister] = useState(initialRegister);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleAuth = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      if (isRegister) {
+        const userCredential = await registerWithEmailAndPassword(
+          email,
+          password
+        );
+        if (onRegistered) {
+          onRegistered(userCredential.user.uid);
+        }
+        setLoading(false);
+        return; // Don't close modal here, let parent handle it
+      } else {
+        await loginWithEmailAndPassword(email, password);
+        onClose();
+      }
+    } catch (err) {
+      if (err.code === "auth/email-already-in-use") {
+        setError("This email is already registered. Please log in.");
+      } else if (err.code === "auth/invalid-email") {
+        setError("Invalid email address. Please check and try again.");
+      } else if (err.code === "auth/wrong-password") {
+        setError("Incorrect password. Please try again.");
+      } else if (err.code === "auth/user-not-found") {
+        setError("Email not found. Please register.");
+      } else {
+        setError("Authentication failed. Please try again.");
+      }
+    }
+    setLoading(false);
+  };
+
+  const handleGoogle = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+      onClose();
+    } catch (err) {
+      setError(err.message) || "Google authentication failed";
+    }
+    setLoading(false);
+  };
 
   return (
     <Overlay>
       <ModalContainer>
-        <CloseButton onClick={onClose}>
+        <CloseButton onClick={onClose} aria-label="Close">
           <CloseIcon />
         </CloseButton>
         <h1>{isRegister ? "Create an account" : "Sign in to your account"}</h1>
-        <button className="google-container" type="button">
+        <button
+          className="google-container"
+          type="button"
+          onClick={handleGoogle}
+          disabled={loading}
+        >
           <img src={googleIcon} alt="Google" />
           <span>Continue with Google</span>
         </button>
@@ -24,17 +87,33 @@ const LoginModal = ({ onClose, initialRegister = false }) => {
             ? "-Or Register using your Email-"
             : "-Or Log In using your Email-"}
         </p>
-        <SecondaryInput type="text" placeholder="Email" />
-        <SecondaryInput type="password" placeholder="Password" />
+        <SecondaryInput
+          type="text"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={loading}
+        />
+        <SecondaryInput
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={loading}
+        />
+        {error && <p style={{ color: "#ff4343", margin: 0 }}>{error}</p>}
         <div className="login-container">
-          <PrimaryButton>{isRegister ? "Register" : "Log in"}</PrimaryButton>
+          <PrimaryButton onClick={handleAuth} disabled={loading}>
+            {loading ? "Loading..." : isRegister ? "Register" : "Log in"}
+          </PrimaryButton>
           <p>Or</p>
           <a
-            href="#"
             onClick={(e) => {
               e.preventDefault();
               setIsRegister((r) => !r);
+              setError(null);
             }}
+            style={{ cursor: "pointer" }}
           >
             {isRegister ? "Log in" : "Sign up"}
           </a>
@@ -89,7 +168,7 @@ const ModalContainer = styled.div`
     width: 512px;
     height: 44px;
     border-radius: 16px;
-
+    cursor: pointer;
     img {
       width: 30px;
     }
@@ -98,10 +177,15 @@ const ModalContainer = styled.div`
       color: #3d3131;
       font-size: 16px;
     }
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
   }
 
   input {
     height: 44px;
+    cursor: text;
   }
 
   .login-container {
@@ -126,6 +210,9 @@ const ModalContainer = styled.div`
       height: 44px;
       font-size: 20px;
       border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   }
 `;
@@ -145,7 +232,7 @@ const CloseButton = styled.button`
   }
 
   svg path {
-    stroke: white;
+    stroke: #fff;
   }
 
   &:hover svg path {
