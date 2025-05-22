@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
-const SecondaryButton = ({ children }) => {
-  return <Container>{children}</Container>;
+const SecondaryButton = ({ children, ...props }) => {
+  return <Container {...props}>{children}</Container>;
 };
 
 const Container = styled.button`

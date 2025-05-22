@@ -5,7 +5,7 @@ import PrimaryInput from "../../ui/Inputs/PrimaryInput";
 import PrimaryButton from "../../ui/Buttons/PrimaryButton";
 import { Link } from "react-router-dom";
 
-const Navbar = () => {
+const Navbar = ({ openLoginModal, openRegisterModal }) => {
   return (
     <Container>
       <NavbarContainer>
@@ -22,9 +22,14 @@ const Navbar = () => {
           <PrimaryInput />
         </StyledPrimaryInput>
         <div className="loginContainer">
-          <a href="#">Log In</a>
-          <PrimaryButton className="navbar-primary-btn">Register</PrimaryButton>
-          <a href="#">Upload</a>
+          <a onClick={openLoginModal}>Log In</a>
+          <PrimaryButton
+            onClick={openRegisterModal}
+            className="navbar-primary-btn"
+          >
+            Register
+          </PrimaryButton>
+          <a onClick={openRegisterModal}>Upload</a>
         </div>
       </NavbarContainer>
     </Container>
@@ -87,6 +92,7 @@ const Container = styled.div`
   .anchorContainer a {
     font-size: 24px;
     text-decoration: none;
+    cursor: pointer;
     color: #fff;
     font-weight: 300;
     &:hover {
@@ -103,6 +109,7 @@ const Container = styled.div`
   }
 
   .loginContainer a {
+    cursor: pointer;
     font-size: 15px;
     text-decoration: none;
     color: #fff;

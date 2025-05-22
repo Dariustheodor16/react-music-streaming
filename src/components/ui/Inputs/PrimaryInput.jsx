@@ -1,14 +1,13 @@
 import styled from "styled-components";
 import SearchIcon from "../../../assets/icons/search.svg?react";
 
-const PrimaryInput = ({ placeholder = "Search for songs, artists, albums", ...props }) => {
+const PrimaryInput = () => {
   return (
     <Container>
       <StyledInput
         type="text"
-        placeholder={placeholder}
-        {...props}
-      />
+        placeholder="Search for songs, artists, albums"
+      ></StyledInput>
       <IconWrapper>
         <SearchIcon />
       </IconWrapper>

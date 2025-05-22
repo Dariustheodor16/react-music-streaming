@@ -4,7 +4,7 @@ import landingImg from "../../../assets/images/1-landing.png";
 import PrimaryButton from "../../ui/Buttons/PrimaryButton";
 import SecondaryButton from "../../ui/Buttons/SecondaryButton";
 
-const HeroBlock = () => (
+const HeroBlock = ({ openLoginModal, openRegisterModal }) => (
   <Container>
     <ImageContainer>
       <Logo src={logo} alt="Logo" />
@@ -19,8 +19,10 @@ const HeroBlock = () => (
           big thing begins with <span>you</span>.
         </p>
         <div className="button-row">
-          <PrimaryButton>Log In</PrimaryButton>
-          <SecondaryButton>Register</SecondaryButton>
+          <PrimaryButton onClick={openLoginModal}>Log In</PrimaryButton>
+          <SecondaryButton onClick={openRegisterModal}>
+            Register
+          </SecondaryButton>
         </div>
       </div>
     </ImageContainer>

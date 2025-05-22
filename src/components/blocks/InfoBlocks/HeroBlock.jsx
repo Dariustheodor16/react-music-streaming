@@ -2,7 +2,7 @@ import styled from "styled-components";
 import infoImg from "../../../assets/images/1-info.png";
 import PrimaryButton from "../../ui/Buttons/PrimaryButton";
 
-const HeroBlock = () => {
+const HeroBlock = ({ openRegisterModal }) => {
   return (
     <Container>
       <img className="landing-img" src={infoImg} alt="albums" />
@@ -14,7 +14,7 @@ const HeroBlock = () => {
           Share your tracks, connect with your audience, and access powerful
           tools to build your legacy.
         </p>
-        <PrimaryButton className="hero-btn">
+        <PrimaryButton onClick={openRegisterModal} className="hero-btn">
           Upload your first song
         </PrimaryButton>
       </div>

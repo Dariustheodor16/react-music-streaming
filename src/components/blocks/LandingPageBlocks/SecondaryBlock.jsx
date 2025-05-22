@@ -2,7 +2,7 @@ import styled from "styled-components";
 import landingImg from "../../../assets/images/2-landing.png";
 import SecondaryButton from "../../ui/Buttons/SecondaryButton";
 
-const SecondaryBlock = () => {
+const SecondaryBlock = ({ openLoginModal, openRegisterModal }) => {
   return (
     <Container>
       <ImageContainer>
@@ -18,10 +18,14 @@ const SecondaryBlock = () => {
       <div className="cta-overlay">
         <h1>Love what you hear? Dive deeper.</h1>
         <p>Save tacks, follow artists, and build your sound. Free forever.</p>
-        <SecondaryButton>Register now</SecondaryButton>
+        <SecondaryButton onClick={openRegisterModal}>
+          Register now
+        </SecondaryButton>
         <div className="login-redirect">
           <p>Already have an account?</p>
-          <a href="#">Log in</a>
+          <a onClick={openLoginModal} style={{ cursor: "pointer" }}>
+            Log in
+          </a>
         </div>
       </div>
     </Container>
