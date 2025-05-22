@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import Image from "../../../assets/icons/image.svg?react";
+import Image from "../../../assets/icons/Image.svg?react";
 import PrimaryButton from "../Buttons/PrimaryButton";
 import Line from "../../../assets/icons/dashed-line.svg?react";
 
