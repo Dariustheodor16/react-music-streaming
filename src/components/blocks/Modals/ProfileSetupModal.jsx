@@ -1,18 +1,60 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import ImageFileInput from "../../ui/Inputs/ImageFileInput";
+import SecondaryInput from "../../ui/Inputs/SecondaryInput";
+import PrimaryButton from "../../ui/Buttons/PrimaryButton";
 import { firestore } from "../../../services/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import styled from "styled-components";
-import PrimaryButton from "../../ui/Buttons/PrimaryButton";
-import SecondaryInput from "../../ui/Inputs/SecondaryInput";
-import ImageFileInput from "../../ui/Inputs/ImageFileInput";
 
-const ProfileSetupModal = () => {
+const ProfileSetupModal = ({ userId, onComplete }) => {
+  const [displayName, setDisplayName] = useState("");
+  const [photoURL, setPhotoURL] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      console.log(
+        "userId:",
+        userId,
+        "displayName:",
+        displayName,
+        "photoURL:",
+        photoURL
+      );
+      await setDoc(doc(firestore, "users", userId), {
+        displayName,
+        photoURL,
+      });
+      if (onComplete) onComplete();
+      navigate("/home");
+    } catch (err) {
+      setError("Failed to save profile.");
+    }
+    setSaving(false);
+  };
+
   return (
     <Overlay>
       <ModalContainer>
         <h1>Profile Setup</h1>
-        <SecondaryInput placeholder="Username"></SecondaryInput>
-        <ImageFileInput />
+        <SecondaryInput
+          placeholder="Username"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+        />
+        <ImageFileInput onUpload={setPhotoURL} />
+        <PrimaryButton
+          onClick={handleSave}
+          disabled={saving || !displayName || !photoURL}
+        >
+          {saving ? "Saving..." : "Save Profile"}
+        </PrimaryButton>
+        {error && <p style={{ color: "#ff4343" }}>{error}</p>}
       </ModalContainer>
     </Overlay>
   );

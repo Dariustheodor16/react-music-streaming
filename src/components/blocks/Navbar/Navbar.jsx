@@ -3,9 +3,32 @@ import logo from "../../../assets/logo.png";
 import miniLogo from "../../../assets/mini-logo.svg";
 import PrimaryInput from "../../ui/Inputs/PrimaryInput";
 import PrimaryButton from "../../ui/Buttons/PrimaryButton";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../../services/authContext";
+import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { firestore } from "../../../services/firebase";
 
 const Navbar = ({ openLoginModal, openRegisterModal }) => {
+  const { currentUser, userLoggedIn } = useAuth();
+  const [profile, setProfile] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (currentUser) {
+        const docRef = doc(firestore, "users", currentUser.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setProfile(docSnap.data());
+        }
+      } else {
+        setProfile(null);
+      }
+    };
+    fetchProfile();
+  }, [currentUser]);
+
   return (
     <Container>
       <NavbarContainer>
@@ -13,24 +36,52 @@ const Navbar = ({ openLoginModal, openRegisterModal }) => {
           <img src={logo} alt="Logo" className="main-logo" />
           <img src={miniLogo} alt="Mini Logo" className="mini-logo" />
         </Link>
-        <div className="anchorContainer">
+        <AnchorContainer>
           <a href="#">Home</a>
           <a href="#">Library</a>
-        </div>
+        </AnchorContainer>
 
         <StyledPrimaryInput>
           <PrimaryInput />
         </StyledPrimaryInput>
-        <div className="loginContainer">
-          <a onClick={openLoginModal}>Log In</a>
-          <PrimaryButton
-            onClick={openRegisterModal}
-            className="navbar-primary-btn"
-          >
-            Register
-          </PrimaryButton>
-          <a onClick={openRegisterModal}>Upload</a>
-        </div>
+        <LoginContainer>
+          {!userLoggedIn ? (
+            <>
+              <LoginAnchor onClick={openLoginModal}>Log In</LoginAnchor>
+              <PrimaryButton
+                onClick={openRegisterModal}
+                className="navbar-primary-btn"
+              >
+                Register
+              </PrimaryButton>
+              <LoginAnchor onClick={openLoginModal}>Upload</LoginAnchor>
+            </>
+          ) : (
+            <>
+              <LoginAnchor
+                className="upload-anchor-loggedin"
+                onClick={() => navigate("/upload")}
+              >
+                Upload
+              </LoginAnchor>
+              {profile && profile.photoURL ? (
+                <ProfileImg
+                  src={profile.photoURL}
+                  alt="Profile"
+                  onClick={() => (window.location.href = "/profile")}
+                />
+              ) : (
+                <ProfileFallback
+                  onClick={() => (window.location.href = "/profile")}
+                >
+                  {profile && profile.displayName
+                    ? profile.displayName[0].toUpperCase()
+                    : "U"}
+                </ProfileFallback>
+              )}
+            </>
+          )}
+        </LoginContainer>
       </NavbarContainer>
     </Container>
   );
@@ -79,57 +130,6 @@ const Container = styled.div`
       height: 36px;
     }
   }
-
-  .anchorContainer {
-    display: flex;
-    flex-direction: row;
-    gap: 32px;
-    align-items: center;
-    margin-left: 26px;
-    margin-right: 26px;
-  }
-
-  .anchorContainer a {
-    font-size: 24px;
-    text-decoration: none;
-    cursor: pointer;
-    color: #fff;
-    font-weight: 300;
-    &:hover {
-      color: #ff4343;
-    }
-  }
-
-  .loginContainer {
-    display: flex;
-    flex-direction: row;
-    gap: 11px;
-    align-items: center;
-    margin-left: 15px;
-  }
-
-  .loginContainer a {
-    cursor: pointer;
-    font-size: 15px;
-    text-decoration: none;
-    color: #fff;
-    font-weight: 500;
-    white-space: nowrap;
-    margin-right: 12px;
-  }
-
-  .navbar-primary-btn {
-    width: 120px;
-    height: 34px;
-    font-size: 16px;
-    text-align: center;
-    padding: 0 16px;
-    border-radius: 4px;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
 `;
 
 const NavbarContainer = styled.div`
@@ -141,6 +141,70 @@ const NavbarContainer = styled.div`
   margin: 0 auto;
   min-width: 0;
   padding: 0 16px;
+`;
+
+const AnchorContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: 32px;
+  align-items: center;
+  margin-left: 26px;
+  margin-right: 26px;
+
+  a {
+    font-size: 24px;
+    text-decoration: none;
+    cursor: pointer;
+    color: #fff;
+    font-weight: 300;
+    &:hover {
+      color: #ff4343;
+    }
+  }
+`;
+
+const LoginContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: 11px;
+  align-items: center;
+  margin-left: 15px;
+`;
+
+const LoginAnchor = styled.a`
+  cursor: pointer;
+  font-size: 15px;
+  text-decoration: none;
+  color: #fff;
+  font-weight: 500;
+  white-space: nowrap;
+  margin-right: 12px;
+
+  &.upload-anchor-loggedin {
+    margin-right: 42px;
+  }
+`;
+
+const ProfileImg = styled.img`
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  cursor: pointer;
+`;
+
+const ProfileFallback = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  font-weight: bold;
+  font-size: 18px;
 `;
 
 const StyledPrimaryInput = styled.div`

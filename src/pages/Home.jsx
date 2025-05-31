@@ -2,12 +2,20 @@ import { useState } from "react";
 import Navbar from "../components/blocks/Navbar/Navbar";
 import LoginModal from "../components/blocks/Modals/LoginModal";
 import ProfileSetupModal from "../components/blocks/Modals/ProfileSetupModal";
+import ControlBar from "../components/players/ControlBar";
 
 const Home = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [registerMode, setRegisterMode] = useState(false);
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const [profileUserId, setProfileUserId] = useState(null);
+
+  // Example dummy song data for the control bar
+  const dummySong = {
+    imageUrl: "/mini-logo.svg",
+    title: "Song name",
+    artist: "Artist name",
+  };
 
   const openLoginModal = () => {
     setRegisterMode(false);
@@ -46,6 +54,7 @@ const Home = () => {
             onComplete={() => setShowProfileSetup(false)}
           />
         )}
+      <ControlBar song={dummySong} />
     </>
   );
 };
