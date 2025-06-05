@@ -41,6 +41,7 @@ const TrackInfo = ({ onSubmit, uploadingImage, error, audioFile }) => {
   const [localError, setLocalError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showQuitModal, setShowQuitModal] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef();
 
   const filteredGenres = genreSearch
@@ -52,6 +53,7 @@ const TrackInfo = ({ onSubmit, uploadingImage, error, audioFile }) => {
       const file = e.target.files[0];
       setImageUrl(URL.createObjectURL(file));
       setImageFile(file);
+      setLocalError("");
     }
   };
 
@@ -126,6 +128,34 @@ const TrackInfo = ({ onSubmit, uploadingImage, error, audioFile }) => {
     }
   };
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const droppedFiles = e.dataTransfer.files;
+    if (droppedFiles.length > 0) {
+      const file = droppedFiles[0];
+
+      if (file.type.startsWith("image/")) {
+        setImageUrl(URL.createObjectURL(file));
+        setImageFile(file);
+        setLocalError("");
+      } else {
+        setLocalError("Please drop an image file (JPG, JPEG, PNG).");
+      }
+    }
+  };
+
   return (
     <Container>
       <CloseButtonStyled onClick={() => setShowQuitModal(true)}>
@@ -134,7 +164,13 @@ const TrackInfo = ({ onSubmit, uploadingImage, error, audioFile }) => {
       <h1>Track info</h1>
       <Content>
         <Left>
-          <DashedBox onClick={() => fileInputRef.current.click()}>
+          <DashedBox
+            onClick={() => fileInputRef.current.click()}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            $isDragging={isDragging}
+          >
             <DashedContent>
               {imageUrl ? (
                 <PreviewImg src={imageUrl} alt="Track cover" />
@@ -142,8 +178,11 @@ const TrackInfo = ({ onSubmit, uploadingImage, error, audioFile }) => {
                 <>
                   <IconStyled />
                   <InfoText>
-                    Use JPG, JPEG, PNG. The maximum file size is 5mb.
+                    {isDragging
+                      ? "Drop your image here!"
+                      : "Drag & drop your image here or click to browse"}
                   </InfoText>
+                  <SubText>JPG, JPEG, PNG. Max 5MB.</SubText>
                 </>
               )}
               <PrimaryButton
@@ -154,7 +193,7 @@ const TrackInfo = ({ onSubmit, uploadingImage, error, audioFile }) => {
                   fileInputRef.current.click();
                 }}
               >
-                Upload file
+                {imageUrl ? "Change image" : "Upload file"}
               </PrimaryButton>
               <input
                 type="file"
@@ -164,7 +203,6 @@ const TrackInfo = ({ onSubmit, uploadingImage, error, audioFile }) => {
                 onChange={handleImageUpload}
                 disabled={loading}
               />
-              {error && <ErrorMsg>{error}</ErrorMsg>}
             </DashedContent>
           </DashedBox>
         </Left>
@@ -312,14 +350,27 @@ const Left = styled.div`
 const DashedBox = styled.div`
   width: 500px;
   height: 500px;
-  border: 2px dashed #aaa;
+  border: 2px dashed ${({ $isDragging }) => ($isDragging ? "#ff4343" : "#aaa")};
   border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #232323;
+  background: ${({ $isDragging }) =>
+    $isDragging ? "rgba(255, 67, 67, 0.1)" : "#232323"};
   position: relative;
   cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #ff4343;
+    background: rgba(255, 67, 67, 0.05);
+  }
+
+  ${({ $isDragging }) =>
+    $isDragging &&
+    `
+    transform: scale(1.02);
+  `}
 `;
 
 const DashedContent = styled.div`
@@ -349,6 +400,14 @@ const InfoText = styled.p`
   color: #d9d9d9;
   font-size: 1.1rem;
   margin-top: 18px;
+  text-align: center;
+  transition: color 0.2s ease;
+`;
+
+const SubText = styled.p`
+  color: #999;
+  font-size: 0.9rem;
+  margin-top: 8px;
   text-align: center;
 `;
 

@@ -5,10 +5,12 @@ import Info from "./pages/Info";
 import Home from "./pages/Home";
 import Upload from "./pages/Upload";
 import Profile from "./pages/Profile";
+import ControlBar from "./components/players/ControlBar";
+import { AudioProvider } from "./services/audioContext";
 
 function App() {
   return (
-    <>
+    <AudioProvider>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/info" element={<Info />}></Route>
@@ -16,7 +18,8 @@ function App() {
         <Route path="/upload" element={<Upload />} />
         <Route path="/profile" element={<Profile />} />
       </Routes>
-    </>
+      <ControlBar />
+    </AudioProvider>
   );
 }
 

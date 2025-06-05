@@ -4,31 +4,32 @@ import UploadIcon from "../../../assets/icons/upload.svg?react";
 import CloseIcon from "../../../assets/icons/close.svg?react";
 import styled from "styled-components";
 import QuitUploadModal from "../Modals/QuitUploadModal";
+import { useFileUpload } from "../../../hooks/upload-hooks";
+
+const allowedTypes = [
+  "audio/wav",
+  "audio/x-wav",
+  "audio/wave",
+  "audio/mp3",
+  "audio/mpeg",
+  "audio/ogg",
+  "audio/aac",
+  "audio/flac",
+];
 
 const AudioUpload = ({ onUploaded }) => {
-  const [file, setFile] = useState(null);
-  const [error, setError] = useState("");
   const [showQuitModal, setShowQuitModal] = useState(false);
   const fileInputRef = useRef();
 
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-      setError("");
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0]);
-      setError("");
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
+  const {
+    file,
+    error,
+    isDragging,
+    handleFileChange,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+  } = useFileUpload(allowedTypes, 10 * 1024 * 1024); // 10MB max
 
   const handleNext = () => {
     if (file && onUploaded) {
@@ -47,32 +48,35 @@ const AudioUpload = ({ onUploaded }) => {
         <DashedBox
           onDrop={handleDrop}
           onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
           onClick={() => fileInputRef.current.click()}
-          style={{ cursor: "pointer" }}
+          $isDragging={isDragging}
         >
           <DashedContent>
             <UploadIconStyled />
             <Instruction>
-              Drag and drop your audio file here or click to select a file
+              {isDragging
+                ? "Drop your audio file here!"
+                : "Drag and drop your audio file here or click to browse"}
             </Instruction>
+            <SubText>WAV, MP3, OGG, AAC, FLAC. Max 10MB.</SubText>
             <input
               type="file"
-              accept="audio/*"
+              accept="audio/wav,audio/mp3,audio/ogg,audio/aac,audio/flac"
               style={{ display: "none" }}
               ref={fileInputRef}
               onChange={handleFileChange}
             />
             {file && <FileName>Selected: {file.name}</FileName>}
             {error && <ErrorMsg>{error}</ErrorMsg>}
-            <PrimaryButton
+            <BrowseLink
               onClick={(e) => {
                 e.stopPropagation();
                 fileInputRef.current.click();
               }}
-              style={{ marginTop: 16 }}
             >
-              Choose file
-            </PrimaryButton>
+              browse files
+            </BrowseLink>
           </DashedContent>
         </DashedBox>
       </Content>
@@ -147,16 +151,33 @@ const CloseButtonStyled = styled.button`
 `;
 
 const DashedBox = styled.div`
-  width: 800px;
+  width: 100%;
+  max-width: 800px;
   height: 500px;
-  border: 2px dashed #aaa;
-  border-radius: 18px;
+  border: 2px dashed
+    ${({ $isDragging }) => ($isDragging ? "#ff4343" : "#585858")};
+  border-radius: 16px;
+  background: ${({ $isDragging }) =>
+    $isDragging ? "rgba(255, 67, 67, 0.1)" : "#232323"};
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 24px 0 16px 0;
-  background: #232323;
+  cursor: pointer;
+  transition: all 0.2s ease;
   position: relative;
+
+  ${({ $isDragging }) =>
+    $isDragging &&
+    `
+    transform: scale(1.02);
+  `}
+
+  &:hover {
+    border-color: #ff4343;
+    background: rgba(255, 67, 67, 0.05);
+    transform: scale(1.01);
+  }
 `;
 
 const DashedContent = styled.div`
@@ -165,25 +186,38 @@ const DashedContent = styled.div`
   align-items: center;
   justify-content: center;
   width: 100%;
+  pointer-events: none;
 `;
 
 const UploadIconStyled = styled(UploadIcon)`
   width: 80px;
   height: 80px;
   margin-bottom: 24px;
+  opacity: 0.6;
 `;
 
 const Instruction = styled.p`
   text-align: center;
-  margin-bottom: 24px;
-  color: #d9d9d9;
+  margin-bottom: 8px;
+  color: #fff;
   font-size: 18px;
+  transition: color 0.2s ease;
+`;
+
+const SubText = styled.p`
+  color: #888;
+  font-size: 14px;
+  margin-bottom: 16px;
+  text-align: center;
 `;
 
 const FileName = styled.div`
   color: #fff;
   margin-bottom: 12px;
-  font-size: 1.1rem;
+  font-size: 12px;
+  background: rgba(255, 67, 67, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
   word-break: break-all;
 `;
 
@@ -202,6 +236,22 @@ const NextButtonContainer = styled.div`
   background: rgba(35, 35, 35, 0.95);
   padding: 24px 0;
   z-index: 20;
+`;
+
+const BrowseLink = styled.button`
+  background: transparent;
+  border: none;
+  color: #ff4343;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 14px;
+  transition: color 0.2s ease;
+  pointer-events: auto;
+  margin-top: 16px;
+
+  &:hover {
+    color: #ff6666;
+  }
 `;
 
 export default AudioUpload;

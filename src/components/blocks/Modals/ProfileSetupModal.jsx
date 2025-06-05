@@ -48,12 +48,14 @@ const ProfileSetupModal = ({ userId, onComplete }) => {
           onChange={(e) => setDisplayName(e.target.value)}
         />
         <ImageFileInput onUpload={setPhotoURL} />
-        <PrimaryButton
-          onClick={handleSave}
-          disabled={saving || !displayName || !photoURL}
-        >
-          {saving ? "Saving..." : "Save Profile"}
-        </PrimaryButton>
+        <ButtonContainer>
+          <PrimaryButton
+            onClick={handleSave}
+            disabled={saving || !displayName || !photoURL}
+          >
+            {saving ? "Saving..." : "Save Profile"}
+          </PrimaryButton>
+        </ButtonContainer>
         {error && <p style={{ color: "#ff4343" }}>{error}</p>}
       </ModalContainer>
     </Overlay>
@@ -151,6 +153,29 @@ const ModalContainer = styled.div`
       align-items: center;
       justify-content: center;
     }
+  }
+`;
+
+const ModalContent = styled.div`
+  background: #1a1a1a;
+  padding: 40px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 60px;
+
+  button {
+    width: 200px;
+    height: 50px;
+    font-size: 1.4rem;
   }
 `;
 

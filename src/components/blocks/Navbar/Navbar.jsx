@@ -3,7 +3,7 @@ import logo from "../../../assets/logo.png";
 import miniLogo from "../../../assets/mini-logo.svg";
 import PrimaryInput from "../../ui/Inputs/PrimaryInput";
 import PrimaryButton from "../../ui/Buttons/PrimaryButton";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../../services/authContext";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
@@ -13,6 +13,7 @@ const Navbar = ({ openLoginModal, openRegisterModal }) => {
   const { currentUser, userLoggedIn } = useAuth();
   const [profile, setProfile] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -37,8 +38,18 @@ const Navbar = ({ openLoginModal, openRegisterModal }) => {
           <img src={miniLogo} alt="Mini Logo" className="mini-logo" />
         </Link>
         <AnchorContainer>
-          <a href="#">Home</a>
-          <a href="#">Library</a>
+          <NavAnchor
+            onClick={() => navigate("/home")}
+            $active={location.pathname === "/home"}
+          >
+            Home
+          </NavAnchor>
+          <LibraryAnchor
+            onClick={() => navigate("/library")}
+            $active={location.pathname === "/library"}
+          >
+            Library
+          </LibraryAnchor>
         </AnchorContainer>
 
         <StyledPrimaryInput>
@@ -48,12 +59,12 @@ const Navbar = ({ openLoginModal, openRegisterModal }) => {
           {!userLoggedIn ? (
             <>
               <LoginAnchor onClick={openLoginModal}>Log In</LoginAnchor>
-              <PrimaryButton
+              <SmallRegisterButton
                 onClick={openRegisterModal}
                 className="navbar-primary-btn"
               >
                 Register
-              </PrimaryButton>
+              </SmallRegisterButton>
               <LoginAnchor onClick={openLoginModal}>Upload</LoginAnchor>
             </>
           ) : (
@@ -68,12 +79,10 @@ const Navbar = ({ openLoginModal, openRegisterModal }) => {
                 <ProfileImg
                   src={profile.photoURL}
                   alt="Profile"
-                  onClick={() => (window.location.href = "/profile")}
+                  onClick={() => navigate("/profile")}
                 />
               ) : (
-                <ProfileFallback
-                  onClick={() => (window.location.href = "/profile")}
-                >
+                <ProfileFallback onClick={() => navigate("/profile")}>
                   {profile && profile.displayName
                     ? profile.displayName[0].toUpperCase()
                     : "U"}
@@ -155,11 +164,36 @@ const AnchorContainer = styled.div`
     font-size: 24px;
     text-decoration: none;
     cursor: pointer;
-    color: #fff;
     font-weight: 300;
     &:hover {
       color: #ff4343;
     }
+  }
+`;
+
+const NavAnchor = styled.a`
+  font-size: 24px;
+  text-decoration: none;
+  cursor: pointer;
+  color: ${({ $active }) => ($active ? "#ff4343" : "#fff")};
+  font-weight: ${({ $active }) => ($active ? "500" : "300")};
+  position: relative;
+
+  &:hover {
+    color: #ff4343;
+  }
+`;
+
+const LibraryAnchor = styled.a`
+  font-size: 24px;
+  text-decoration: none;
+  cursor: pointer;
+  color: ${({ $active }) => ($active ? "#ff4343" : "#fff")};
+  font-weight: ${({ $active }) => ($active ? "500" : "300")};
+  position: relative;
+
+  &:hover {
+    color: #ff4343;
   }
 `;
 
@@ -249,6 +283,14 @@ const StyledPrimaryInput = styled.div`
       font-size: 14px;
     }
   }
+`;
+
+const SmallRegisterButton = styled(PrimaryButton)`
+  font-size: 14px !important;
+  padding: 8px 16px !important;
+  height: 36px !important;
+  min-width: 80px !important;
+  border-radius: 6px !important;
 `;
 
 export default Navbar;

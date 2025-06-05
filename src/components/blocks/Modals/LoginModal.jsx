@@ -33,7 +33,7 @@ const LoginModal = ({ onClose, initialRegister = false, onRegistered }) => {
           onRegistered(userCredential.user.uid);
         }
         setLoading(false);
-        return; // Don't close modal here, let parent handle it
+        return;
       } else {
         await loginWithEmailAndPassword(email, password);
         onClose();
@@ -58,10 +58,22 @@ const LoginModal = ({ onClose, initialRegister = false, onRegistered }) => {
     setError(null);
     setLoading(true);
     try {
-      await signInWithGoogle();
-      onClose();
+      const userCredential = await signInWithGoogle();
+      const user = userCredential.user;
+
+      const isNewUser =
+        userCredential.user.metadata.creationTime ===
+        userCredential.user.metadata.lastSignInTime;
+
+      if (isNewUser && onRegistered) {
+        onRegistered(user.uid);
+        setLoading(false);
+        return;
+      } else {
+        onClose();
+      }
     } catch (err) {
-      setError(err.message) || "Google authentication failed";
+      setError(err.message || "Google authentication failed");
     }
     setLoading(false);
   };

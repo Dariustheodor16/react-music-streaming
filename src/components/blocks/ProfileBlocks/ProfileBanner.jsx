@@ -1,71 +1,21 @@
-import { useEffect, useRef, useState } from "react";
-import ColorThief from "colorthief";
+import { useAuth } from "../../../services/authContext";
+import { useColorExtraction } from "../../../hooks/profile-hooks/useColorExtraction";
+import { useSongsCount } from "../../../hooks/profile-hooks/useSongsCount";
 import styled from "styled-components";
 import PrimaryButton from "../../ui/Buttons/PrimaryButton";
-import {
-  collection,
-  query,
-  where,
-  getCountFromServer,
-} from "firebase/firestore";
-import { firestore } from "../../../services/firebase";
-import { useAuth } from "../../../services/authContext";
 
 const ProfileBanner = ({
   profilePic = "/mini-logo.svg",
   username = "Username",
   followers = 0,
   following = 0,
-  songs = 0, // initial value, will be updated
+  songs = 0,
   albums = 0,
   onEdit,
 }) => {
-  const [gradient, setGradient] = useState(
-    "linear-gradient(90deg, #3a3a60 0%, #232323 100%)"
-  );
-  const [songsCount, setSongsCount] = useState(songs);
-  const imgRef = useRef();
-  const colorThief = new ColorThief();
   const { currentUser } = useAuth();
-
-  // Fetch songs count from Firestore
-  useEffect(() => {
-    const fetchSongsCount = async () => {
-      if (!currentUser) return;
-      const q = query(
-        collection(firestore, "tracks"),
-        where("userId", "==", currentUser.uid)
-      );
-      const snapshot = await getCountFromServer(q);
-      setSongsCount(snapshot.data().count);
-    };
-    fetchSongsCount();
-  }, [currentUser]);
-
-  useEffect(() => {
-    const img = imgRef.current;
-    if (!img) return;
-
-    const extractColor = () => {
-      try {
-        if (!img.complete) return;
-        const color = colorThief.getColor(img);
-        const colorString = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-        setGradient(`linear-gradient(90deg, ${colorString} 0%, #232323 100%)`);
-      } catch (err) {
-        setGradient("linear-gradient(90deg, #3a3a60 0%, #232323 100%)");
-      }
-    };
-
-    img.addEventListener("load", extractColor);
-    if (img.complete) {
-      extractColor();
-    }
-
-    return () => {
-      img.removeEventListener("load", extractColor);
-    };
-  }, [profilePic]);
+  const { gradient, imgRef } = useColorExtraction(profilePic);
+  const { songsCount } = useSongsCount(currentUser?.uid, songs);
 
   return (
     <Banner style={{ background: gradient }}>
@@ -115,7 +65,26 @@ const Banner = styled.div`
   position: relative;
   margin-top: 32px;
   box-sizing: border-box;
+  background: ${({ style }) => style?.background || "none"};
+  background-blend-mode: lighten, overlay, normal;
+  background-size: 200% 200%, 150% 150%, 200% 200%;
+  animation: liquidGradientMove 12s ease-in-out infinite;
   transition: background 0.5s;
+
+  @keyframes liquidGradientMove {
+    0% {
+      background-position: 0% 50%, 50% 50%, 100% 50%;
+      background-size: 200% 200%, 150% 150%, 200% 200%;
+    }
+    50% {
+      background-position: 100% 50%, 60% 60%, 0% 50%;
+      background-size: 250% 250%, 120% 120%, 180% 180%;
+    }
+    100% {
+      background-position: 0% 50%, 50% 50%, 100% 50%;
+      background-size: 200% 200%, 150% 150%, 200% 200%;
+    }
+  }
 `;
 
 const ProfilePic = styled.img`
