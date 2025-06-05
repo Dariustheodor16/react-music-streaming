@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import AudioUpload from "../components/blocks/uploadBlocks/AudioUpload";
 import TrackInfo from "../components/blocks/uploadBlocks/TrackInfo";
-import { useAudio } from "../services/audioContext.jsx";
+import { useAudio } from "../services/audioContext";
 
 const Upload = () => {
   const [audioFile, setAudioFile] = useState(null);

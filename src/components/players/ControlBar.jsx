@@ -1,5 +1,5 @@
 import styled, { keyframes } from "styled-components";
-import { useAudio } from "../../services/audioContext.jsx";
+import { useAudio } from "../../services/audioContext";
 import { useEffect, useState, useRef } from "react";
 import {
   useLikeState,
