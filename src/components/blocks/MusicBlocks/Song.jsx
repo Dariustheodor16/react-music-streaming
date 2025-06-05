@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { useAudio } from "../../../services/audioContext";
+import { useAudio } from "../../../services/audioContext.jsx";
 import {
   useLikeState,
   useDropdownMenu,

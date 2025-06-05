@@ -6,7 +6,7 @@ import Home from "./pages/Home";
 import Upload from "./pages/Upload";
 import Profile from "./pages/Profile";
 import ControlBar from "./components/players/ControlBar";
-import { AudioProvider } from "./services/audioContext";
+import { AudioProvider } from "./services/audioContext.jsx";
 
 function App() {
   return (
