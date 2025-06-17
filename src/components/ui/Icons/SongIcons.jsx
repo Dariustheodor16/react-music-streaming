@@ -7,6 +7,8 @@ import DotsIcon from "../../../assets/icons/dots.svg?react";
 import AddPlaylistIcon from "../../../assets/icons/add-playlist.svg?react";
 import ArtistIcon from "../../../assets/icons/artist.svg?react";
 import AlbumIcon from "../../../assets/icons/album.svg?react";
+import MusicIcon from "../../../assets/icons/music.svg?react";
+import DeleteIcon from "../../../assets/icons/delete.svg?react";
 import styled from "styled-components";
 
 export const PlayIconStyled = styled(PlayIcon)`
@@ -97,4 +99,16 @@ export const ArtistIconStyled = styled(ArtistIcon)`
 export const AlbumIconStyled = styled(AlbumIcon)`
   width: 16px;
   height: 16px;
+`;
+
+export const MusicIconStyled = styled(MusicIcon)`
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+`;
+
+export const DeleteIconStyled = styled(DeleteIcon)`
+  width: 16px;
+  height: 16px;
+  fill: #ff4343;
 `;

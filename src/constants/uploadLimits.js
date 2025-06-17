@@ -1,0 +1,23 @@
+export const UPLOAD_LIMITS = {
+  MAX_AUDIO_SIZE: 10 * 1024 * 1024, // 10MB
+  MAX_IMAGE_SIZE: 5 * 1024 * 1024,  // 5MB
+  MAX_FILENAME_LENGTH: 255,
+};
+
+export const TIMEOUTS = {
+  REFRESH_DELAY: 500,
+  AUDIO_LOAD_TIMEOUT: 5000,
+  DEBOUNCE_DELAY: 300,
+};
+
+export const VALIDATION_RULES = {
+  MIN_USERNAME_LENGTH: 3,
+  MAX_USERNAME_LENGTH: 20,
+  MIN_PASSWORD_LENGTH: 6,
+};
+
+export const CLOUDINARY_CONFIG = {
+  UPLOAD_PRESET_AUDIO: "audio_upload",
+  UPLOAD_PRESET_IMAGES: "profile_pictures",
+  CLOUD_NAME: "dky8gzzrx",
+};

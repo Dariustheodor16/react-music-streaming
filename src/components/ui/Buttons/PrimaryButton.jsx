@@ -5,13 +5,15 @@ const PrimaryButton = ({ children, ...props }) => {
 };
 
 const Container = styled.button`
-  border-radius: 0.833vw;
+  width: 154px;
+  height: 54px;
+  border-radius: 12px;
   background-color: #d9d9d9;
   color: #3d3131;
-  font-size: 1.25vw;
+  font-size: 28px;
+  font-weight: 200;
   border: none;
-  padding: 0.5em 2vw;
-  height: 2.813vw;
+  padding: 8px 28px;
   text-align: center;
   cursor: pointer;
   &:hover {

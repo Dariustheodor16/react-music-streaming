@@ -1,14 +1,14 @@
-export const useMusicDisplayLogic = (songs, playlists, activeTab) => {
+export const useMusicDisplayLogic = (songs, albums, activeTab) => {
   const useSideLayout =
-    playlists.length > 0 && playlists.length <= 1 && songs.length > 0;
+    albums.length > 0 && albums.length <= 1 && songs.length > 0;
 
   const showEmptyState = () => {
     if (activeTab === "songs") {
       return songs.length === 0;
     } else if (activeTab === "albums") {
-      return playlists.length === 0;
+      return albums.length === 0;
     } else {
-      return songs.length === 0 && playlists.length === 0;
+      return songs.length === 0 && albums.length === 0;
     }
   };
 

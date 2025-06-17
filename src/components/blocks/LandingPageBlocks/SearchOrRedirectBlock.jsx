@@ -11,9 +11,9 @@ const SearchOrRedirectBlock = () => {
         <PrimaryInput />
       </div>
       <p>Or</p>
-      <PrimaryButton onClick={() => navigate("/info")}>
+      <StyledPrimaryButton onClick={() => navigate("/info")}>
         Claim Your Stage
-      </PrimaryButton>
+      </StyledPrimaryButton>
     </Container>
   );
 };
@@ -57,6 +57,17 @@ const Container = styled.div`
       font-size: 1rem;
     }
   }
+`;
+
+const StyledPrimaryButton = styled(PrimaryButton)`
+  width: 224px !important;
+  height: 54px !important;
+  font-size: 24px;
+  white-space: nowrap;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center;
 `;
 
 export default SearchOrRedirectBlock;

@@ -1,60 +1,64 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/blocks/Navbar/Navbar";
-import ProfileBanner from "../components/blocks/ProfileBlocks/ProfileBanner";
-import MusicDisplay from "../components/blocks/ProfileBlocks/MusicDisplay";
-import EditProfileModal from "../components/blocks/Modals/EditProfileModal";
-import styled from "styled-components";
-import { useAuth } from "../services/authContext";
+import { useAuth } from "../services/auth/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { firestore } from "../services/firebase";
+import styled from "styled-components";
 
 const Profile = () => {
   const { currentUser } = useAuth();
-  const [profile, setProfile] = useState(null);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (currentUser) {
+    const redirectToUserProfile = async () => {
+      if (!currentUser) {
+        navigate("/");
+        return;
+      }
+
+      try {
         const docRef = doc(firestore, "users", currentUser.uid);
         const docSnap = await getDoc(docRef);
+
         if (docSnap.exists()) {
-          setProfile(docSnap.data());
+          const userData = docSnap.data();
+          if (userData.username) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const refresh = urlParams.get("refresh");
+            const targetUrl = refresh
+              ? `/profile/${userData.username}?refresh=${refresh}`
+              : `/profile/${userData.username}`;
+
+            navigate(targetUrl, { replace: true });
+          } else {
+            navigate("/profile-setup", { replace: true });
+          }
+        } else {
+          navigate("/profile-setup", { replace: true });
         }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        navigate("/");
+      } finally {
+        setLoading(false);
       }
     };
-    fetchProfile();
-  }, [currentUser]);
 
-  const handleProfileUpdate = (updatedProfile) => {
-    setProfile(updatedProfile);
-    setShowEditModal(false);
-  };
+    redirectToUserProfile();
+  }, [currentUser, navigate]);
 
-  return (
-    <MainWrapper>
-      <Navbar />
-      <ProfileBanner
-        profilePic={profile?.photoURL || "/mini-logo.svg"}
-        username={profile?.displayName || "Username"}
-        followers={profile?.followers || 0}
-        following={profile?.following || 0}
-        songs={profile?.songs || 0}
-        albums={profile?.albums || 0}
-        onEdit={() => setShowEditModal(true)}
-      />
-      <MusicDisplay />
+  if (loading) {
+    return (
+      <MainWrapper>
+        <Navbar />
+        <LoadingState>Loading...</LoadingState>
+      </MainWrapper>
+    );
+  }
 
-      {showEditModal && (
-        <EditProfileModal
-          currentProfile={profile}
-          userId={currentUser?.uid}
-          onClose={() => setShowEditModal(false)}
-          onUpdate={handleProfileUpdate}
-        />
-      )}
-    </MainWrapper>
-  );
+  return null;
 };
 
 const MainWrapper = styled.div`
@@ -63,6 +67,15 @@ const MainWrapper = styled.div`
   flex-direction: column;
   position: relative;
   padding-bottom: 70px;
+`;
+
+const LoadingState = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  color: #fff;
+  font-size: 24px;
 `;
 
 export default Profile;

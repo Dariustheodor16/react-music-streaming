@@ -2,9 +2,13 @@ import styled from "styled-components";
 import Image from "../../../assets/icons/Image.svg?react";
 import Line from "../../../assets/icons/dashed-line.svg?react";
 import { useState } from "react";
+import {
+  UPLOAD_LIMITS,
+  CLOUDINARY_CONFIG,
+} from "../../../constants/uploadLimits";
 
-const CLOUDINARY_UPLOAD_PRESET = "profile_pictures";
-const CLOUDINARY_CLOUD_NAME = "dky8gzzrx";
+const CLOUDINARY_UPLOAD_PRESET = CLOUDINARY_CONFIG.UPLOAD_PRESET_IMAGES;
+const CLOUDINARY_CLOUD_NAME = CLOUDINARY_CONFIG.CLOUD_NAME;
 
 const ImageFileInput = ({ onUpload }) => {
   const [file, setFile] = useState(null);
@@ -44,7 +48,7 @@ const ImageFileInput = ({ onUpload }) => {
       setError("Please select an image file.");
       return;
     }
-    if (selectedFile.size > 5 * 1024 * 1024) {
+    if (selectedFile.size > UPLOAD_LIMITS.MAX_IMAGE_SIZE) {
       setError("File size must be less than 5MB.");
       return;
     }

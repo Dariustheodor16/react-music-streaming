@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CLOUDINARY_CONFIG } from "../../constants/uploadLimits";
 
 export const useCloudinaryUpload = () => {
   const [uploading, setUploading] = useState(false);
@@ -14,7 +15,7 @@ export const useCloudinaryUpload = () => {
       formData.append("upload_preset", uploadPreset);
 
       const res = await fetch(
-        `https://api.cloudinary.com/v1_1/dky8gzzrx/${resourceType}/upload`,
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.CLOUD_NAME}/${resourceType}/upload`,
         { method: "POST", body: formData }
       );
 

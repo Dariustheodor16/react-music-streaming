@@ -1,10 +1,9 @@
+import { useState, useEffect } from "react";
 import styled from "styled-components";
-import { useAudio } from "../../../services/audioContext";
-import {
-  useLikeState,
-  useDropdownMenu,
-  useSongs,
-} from "../../../hooks/song-control-hooks";
+import { useNavigate } from "react-router-dom";
+import { useAudio } from "../../../services/AudioContext";
+import { useLikes } from "../../../services/LikeContext";
+import { useDropdownMenu } from "../../../hooks/song-control-hooks";
 import {
   PlayIconStyled,
   PlaySecondaryIconStyled,
@@ -15,7 +14,11 @@ import {
   AddPlaylistIconStyled,
   ArtistIconStyled,
   AlbumIconStyled,
+  MusicIconStyled,
 } from "../../../components/ui/Icons/SongIcons";
+import AddToPlaylistModal from "../../ui/Modals/AddToPlaylistModal";
+import DeleteIcon from "../../../assets/icons/delete.svg?react";
+import { formatNumber } from "../../../utils/formatNumbers";
 
 const Song = ({
   id,
@@ -28,17 +31,59 @@ const Song = ({
   genre,
   description,
   allSongs = [],
+  albumId,
+  playlistId,
+  onRemoveFromPlaylist,
+  uploaderUsername,
+  onArtistClick,
+  isGuestMode = false,
 }) => {
-  const { currentSong, isPlaying, playSong, pauseSong } = useAudio();
+  const navigate = useNavigate();
   const {
-    liked,
-    brokenHover,
-    handleHeartClick,
-    handleMouseEnter,
-    handleMouseLeave,
-  } = useLikeState();
-  const { showMenu, handleToggleMenu, handleCloseMenu, handleMenuItemClick } =
-    useDropdownMenu();
+    currentSong,
+    isPlaying,
+    playSong,
+    pauseSong,
+    getPlayCount,
+    loadPlayCount,
+  } = useAudio();
+  const { isLiked, toggleLike } = useLikes();
+  const [isHeartHovered, setIsHeartHovered] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [realPlayCount, setRealPlayCount] = useState(0);
+  const { showMenu, handleToggleMenu, handleCloseMenu } = useDropdownMenu();
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+
+  const liked = isLiked(id);
+
+  useEffect(() => {
+    const loadRealPlayCount = async () => {
+      const count = await loadPlayCount(id);
+      setRealPlayCount(count);
+    };
+
+    loadRealPlayCount();
+  }, [id, loadPlayCount]);
+
+  useEffect(() => {
+    const currentCount = getPlayCount(id);
+    if (currentCount !== realPlayCount) {
+      setRealPlayCount(currentCount);
+    }
+  }, [id, getPlayCount, realPlayCount]);
+
+  const handleHeartClick = (e) => {
+    e.stopPropagation();
+    if (isGuestMode) {
+      return;
+    }
+    toggleLike(id);
+  };
+
+  const handleSongNameClick = (e) => {
+    e.stopPropagation();
+    navigate(`/song/${id}`);
+  };
 
   const handleSongClick = () => {
     const songData = {
@@ -59,50 +104,160 @@ const Song = ({
     }
   };
 
+  const handleMenuItemClick = async (action, callback, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleCloseMenu();
+
+    switch (action) {
+      case "song":
+        navigate(`/song/${id}`);
+        break;
+      case "playlist":
+        setShowPlaylistModal(true);
+        break;
+      case "artist":
+        handleGoToArtist();
+        break;
+      case "album":
+        handleGoToAlbum();
+        break;
+      case "removeFromPlaylist":
+        if (onRemoveFromPlaylist) {
+          try {
+            await onRemoveFromPlaylist(id);
+          } catch (error) {
+            console.error("Error removing song from playlist:", error);
+            alert("Failed to remove song from playlist.");
+          }
+        }
+        break;
+      default:
+        callback && callback();
+    }
+  };
+
+  const handleGoToArtist = async () => {
+    try {
+      const { trackService } = await import("../../../services/api");
+      const trackData = await trackService.getTrackById(id);
+
+      const uploaderUserId = trackData?.uploadedBy || trackData?.userId;
+
+      if (uploaderUserId) {
+        const { userService } = await import("../../../services/api");
+        const userData = await userService.getUserById(uploaderUserId);
+
+        if (userData?.username) {
+          navigate(`/profile/${userData.username}`);
+          return;
+        } else {
+          console.warn("User found but no username:", userData);
+        }
+      } else {
+        console.warn("No uploader field in track data:", trackData);
+      }
+
+      console.log("Could not find artist profile for this song");
+    } catch (error) {
+      console.error("Error navigating to artist:", error);
+    }
+  };
+
+  const handleGoToAlbum = () => {
+    if (albumId) {
+      navigate(`/album/${albumId}`);
+    }
+  };
+
   const isCurrentSong = currentSong?.id === id;
   const isCurrentlyPlaying = isCurrentSong && isPlaying;
 
+  const handleArtistNameClick = (e) => {
+    e.stopPropagation();
+    const firstArtist = artist ? artist.split(",")[0].trim() : "";
+
+    if (firstArtist) {
+      navigate(`/profile/${firstArtist}`);
+    }
+  };
+
+  const menuItems = [
+    {
+      label: "Go to song",
+      action: "song",
+      icon: "song",
+    },
+    ...(!isGuestMode
+      ? [
+          {
+            label: "Add to playlist",
+            action: "playlist",
+            icon: "playlist",
+          },
+        ]
+      : []),
+    ...(albumId && !isGuestMode
+      ? [
+          {
+            label: "Go to album",
+            action: "album",
+            icon: "album",
+          },
+        ]
+      : []),
+    ...(onRemoveFromPlaylist && !isGuestMode
+      ? [
+          {
+            label: "Remove from playlist",
+            action: "removeFromPlaylist",
+            icon: "delete",
+          },
+        ]
+      : []),
+  ];
+
   return (
     <Container
-      onClick={handleSongClick}
+      className={`song ${isCurrentSong ? "current" : ""}`}
+      $isCurrentSong={isCurrentSong}
       $isPlaying={isCurrentlyPlaying}
-      onMouseLeave={handleCloseMenu}
+      onClick={handleSongClick}
     >
       <PlayingIndicator $show={isCurrentlyPlaying}>
         <PlaySecondaryIconStyled />
       </PlayingIndicator>
 
       <SongImg src={image} alt={name} />
+
       <SongInfo>
-        <SongName $isPlaying={isCurrentlyPlaying}>{name}</SongName>
-        <SongArtist>{artist}</SongArtist>
+        <SongName $isPlaying={isCurrentlyPlaying} onClick={handleSongNameClick}>
+          {name}
+        </SongName>
+        <SongArtist onClick={handleArtistNameClick}>{artist}</SongArtist>
         <SongDuration>{duration}</SongDuration>
       </SongInfo>
 
       <PlaySection>
         <PlayIconStyled />
-        <Plays>{plays}</Plays>
+        <PlaysCount>{formatNumber(realPlayCount)}</PlaysCount>
       </PlaySection>
 
       <RightSection>
-        {!liked ? (
-          <HeartIconStyled
-            tabIndex={0}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleHeartClick();
-            }}
-          />
-        ) : (
+        {!isGuestMode && (
           <HeartContainer
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            onClick={(e) => e.stopPropagation()}
+            onMouseEnter={() => setIsHeartHovered(true)}
+            onMouseLeave={() => setIsHeartHovered(false)}
+            onClick={handleHeartClick}
           >
-            {!brokenHover ? (
-              <FilledHeartIconStyled tabIndex={0} onClick={handleHeartClick} />
+            {liked ? (
+              isHeartHovered ? (
+                <BrokenHeartIconStyled />
+              ) : (
+                <FilledHeartIconStyled />
+              )
             ) : (
-              <BrokenHeartIconStyled tabIndex={0} onClick={handleHeartClick} />
+              <HeartIconStyled />
             )}
           </HeartContainer>
         )}
@@ -111,37 +266,59 @@ const Song = ({
           <DotsIconStyled onClick={handleToggleMenu} tabIndex={0} />
           {showMenu && (
             <DropdownMenu>
-              <MenuItem
-                onClick={(e) =>
-                  handleMenuItemClick("playlist", handleMenuAction, e)
-                }
-              >
-                <AddPlaylistIconStyled />
-                <MenuText>Add to playlist</MenuText>
-              </MenuItem>
-              <MenuItem
-                onClick={(e) =>
-                  handleMenuItemClick("artist", handleMenuAction, e)
-                }
-              >
-                <ArtistIconStyled />
-                <MenuText>Go to artist</MenuText>
-              </MenuItem>
-              <MenuItem
-                onClick={(e) =>
-                  handleMenuItemClick("album", handleMenuAction, e)
-                }
-              >
-                <AlbumIconStyled />
-                <MenuText>Go to album</MenuText>
-              </MenuItem>
+              {menuItems.map((item) => (
+                <MenuItem
+                  key={item.label}
+                  onClick={(e) => handleMenuItemClick(item.action, () => {}, e)}
+                  $isDelete={item.action === "removeFromPlaylist"}
+                >
+                  {item.action === "song" && <MusicIconStyled />}{" "}
+                  {item.action === "playlist" && <AddPlaylistIconStyled />}
+                  {item.action === "artist" && <ArtistIconStyled />}
+                  {item.action === "album" && <AlbumIconStyled />}
+                  {item.action === "removeFromPlaylist" && <DeleteIconStyled />}
+                  <MenuText>{item.label}</MenuText>
+                </MenuItem>
+              ))}
             </DropdownMenu>
           )}
         </MenuContainer>
       </RightSection>
+
+      <AddToPlaylistModal
+        isOpen={showPlaylistModal}
+        onClose={() => setShowPlaylistModal(false)}
+        songId={id}
+        songName={name}
+      />
     </Container>
   );
 };
+
+const SongName = styled.div`
+  font-size: 20px;
+  color: #fff;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+
+  &:hover {
+    color: #ff4343;
+    text-decoration: underline;
+  }
+
+  ${({ $isPlaying }) =>
+    $isPlaying &&
+    `
+    color: #ff4343;
+  `}
+`;
 
 const Container = styled.div`
   width: 723px;
@@ -192,15 +369,7 @@ const SongInfo = styled.div`
   justify-content: center;
   min-width: 0;
   width: 270px;
-`;
-
-const SongName = styled.div`
-  font-size: 20px;
-  color: #fff;
-  font-weight: 500;
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
 `;
 
 const SongArtist = styled.div`
@@ -210,6 +379,13 @@ const SongArtist = styled.div`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #ff4343;
+    text-decoration: underline;
+  }
 `;
 
 const SongDuration = styled.div`
@@ -229,9 +405,13 @@ const PlaySection = styled.div`
   }
 `;
 
-const Plays = styled.div`
+const PlaysCount = styled.div`
   font-size: 18px;
   color: #fff;
+  text-align: left;
+  min-width: 45px; /* ✅ Reduce from 60px to 45px */
+  white-space: nowrap;
+  margin-left: 8px; /* ✅ Add small margin to create consistent spacing from icon */
 `;
 
 const RightSection = styled.div`
@@ -251,6 +431,12 @@ const RightSection = styled.div`
 
 const HeartContainer = styled.span`
   display: inline-flex;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
 `;
 
 const MenuContainer = styled.div`
@@ -262,51 +448,68 @@ const DropdownMenu = styled.div`
   top: 100%;
   right: -18px;
   background: #191919;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
   z-index: 10;
-  min-width: 180px;
+  min-width: 200px;
   padding: 8px 0;
-  margin-top: 4px;
+  margin-top: 8px;
+  overflow: hidden;
 
   &::after {
     content: "";
     position: absolute;
-    top: -12px;
+    top: -16px;
     left: 0;
     right: 0;
-    height: 16px;
+    height: 20px;
     background: transparent;
   }
 
   &::before {
     content: "";
     position: absolute;
-    top: -6px;
-    right: 12px;
+    top: -8px;
+    right: 24px;
     width: 0;
     height: 0;
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    border-bottom: 6px solid #191919;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid #191919;
     z-index: 1;
+    filter: drop-shadow(0 -2px 4px rgba(0, 0, 0, 0.2));
   }
 `;
 
-const MenuItem = styled.button`
-  width: 100%;
-  background: none;
-  border: none;
+const MenuItem = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
+  color: ${({ $isDelete }) => ($isDelete ? "#ff4343" : "#fff")};
 
   &:hover {
-    background: #333;
+    background: ${({ $isDelete }) => ($isDelete ? "#ff4343" : "#333")};
+    color: ${({ $isDelete }) => ($isDelete ? "#fff" : "#fff")};
   }
+
+  ${({ $isDelete }) =>
+    $isDelete &&
+    `
+    &:hover {
+      color: #fff;
+    }
+  `}
+`;
+
+const DeleteIconStyled = styled(DeleteIcon)`
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
 `;
 
 const MenuText = styled.span`

@@ -1,80 +1,84 @@
-import { useState, useEffect } from "react";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { firestore } from "../../services/firebase";
+import { useState, useEffect, useCallback } from "react";
+import { trackService } from "../../services/api";
+import { durationService } from "../../services/api/durationService";
+import { playCountService } from "../../services/api/playCountService";
 
-export const useSongs = (userId) => {
+export const useSongs = (userId, refreshKey = 0) => {
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const getAudioDuration = (audioUrl) => {
-    return new Promise((resolve) => {
-      const audio = new Audio();
-      audio.addEventListener("loadedmetadata", () => {
-        const duration = audio.duration;
-        const minutes = Math.floor(duration / 60);
-        const seconds = Math.floor(duration % 60);
-        resolve(`${minutes}:${seconds.toString().padStart(2, "0")}`);
+  const fetchSongs = useCallback(async () => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const tracks = await trackService.getTracksByUserId(userId);
+      const validTracks = tracks.filter(
+        (track) => track.artists?.length > 0 && track.title && track.audioUrl
+      );
+
+      const songIds = validTracks.map((track) => track.id);
+      const playCounts = await playCountService.getMultiplePlayCounts(songIds);
+
+      const tracksWithDuration =
+        await durationService.getMultipleTrackDurations(validTracks);
+
+      const allSongs = tracksWithDuration.map((track) => ({
+        id: track.id,
+        name: track.title,
+        artist: track.artists.join(", "),
+        duration: track.duration || "--:--",
+        plays: playCounts.get(track.id) || 0,
+        image: track.imageUrl || "/mini-logo.svg",
+        audioUrl: track.audioUrl,
+        genre: track.genre,
+        description: track.description,
+        albumId: track.albumId,
+        albumName: track.albumName,
+        trackNumber: track.trackNumber,
+        createdAt: track.createdAt,
+        releaseDate: track.releaseDate,
+      }));
+
+      allSongs.sort((a, b) => {
+        const aDate = a.releaseDate || a.createdAt;
+        const bDate = b.releaseDate || b.createdAt;
+
+        if (!aDate || !bDate) return 0;
+
+        const aTime = aDate.toMillis
+          ? aDate.toMillis()
+          : new Date(aDate).getTime();
+        const bTime = bDate.toMillis
+          ? bDate.toMillis()
+          : new Date(bDate).getTime();
+
+        return bTime - aTime;
       });
-      audio.addEventListener("error", () => {
-        resolve("--:--");
-      });
-      audio.src = audioUrl;
-    });
-  };
 
-  useEffect(() => {
-    const fetchSongs = async () => {
-      if (!userId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const q = query(
-          collection(firestore, "tracks"),
-          where("userId", "==", userId)
-        );
-
-        const querySnapshot = await getDocs(q);
-        const fetchedSongs = [];
-
-        for (const doc of querySnapshot.docs) {
-          const data = doc.data();
-
-          let duration = "3:45";
-          if (data.audioUrl) {
-            try {
-              duration = await getAudioDuration(data.audioUrl);
-            } catch (error) {
-              console.warn("Could not get duration for", data.title, error);
-            }
-          }
-
-          fetchedSongs.push({
-            id: doc.id,
-            name: data.title,
-            artist: data.artists ? data.artists.join(", ") : "Unknown Artist",
-            duration: duration,
-            plays: Math.floor(Math.random() * 10000),
-            image: data.imageUrl || "/mini-logo.svg",
-            audioUrl: data.audioUrl,
-            genre: data.genre,
-            description: data.description,
-          });
-        }
-
-        setSongs(fetchedSongs);
-      } catch (error) {
-        console.error("Error fetching songs:", error);
-        setError("Failed to load songs");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSongs();
+      setSongs(allSongs);
+    } catch (err) {
+      console.error("Error fetching songs:", err);
+      setError("Failed to load songs");
+      setSongs([]);
+    } finally {
+      setLoading(false);
+    }
   }, [userId]);
 
-  return { songs, loading, error, setSongs };
+  useEffect(() => {
+    fetchSongs();
+  }, [fetchSongs, refreshKey]);
+
+  return {
+    songs,
+    loading,
+    error,
+    refetch: fetchSongs,
+  };
 };

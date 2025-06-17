@@ -1,4 +1,3 @@
-export { useLikeState } from "./useLikeState";
 export { useDragging } from "./useDragging";
 export { useVolumeControl } from "./useVolumeControl";
 export { useProgressControl } from "./useProgressControl";

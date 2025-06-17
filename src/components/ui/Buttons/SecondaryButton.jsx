@@ -5,15 +5,20 @@ const SecondaryButton = ({ children, ...props }) => {
 };
 
 const Container = styled.button`
-  border-radius: 0.833vw;
+  width: 154px;
+  height: 54px;
+  border-radius: 16px;
   background-color: #ff4343;
   color: #fff;
-  font-size: 1.25vw;
+  font-size: 28px;
   border: none;
-  padding: 0.5em 2vw;
-  height: 2.813vw;
+  padding: 0;
   text-align: center;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   &:hover {
     background-color: #923131;
   }

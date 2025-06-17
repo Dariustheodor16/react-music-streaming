@@ -1,108 +1,177 @@
-import { useState } from "react";
-import { collection, addDoc } from "firebase/firestore";
+import { useState, useRef, useEffect } from "react";
+import { useAuth } from "../../services/auth/AuthContext";
 import { firestore } from "../../services/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
+import { CLOUDINARY_CONFIG } from "../../constants/uploadLimits";
 
-const GENRES = [
-  "Pop",
-  "Rock",
-  "Hip Hop",
-  "Electronic",
-  "Jazz",
-  "Classical",
-  "Country",
-  "R&B",
-  "Reggae",
-  "Folk",
-  "Blues",
-  "Punk",
-  "Metal",
-  "Indie",
-  "Alternative",
-];
+const CLOUDINARY_UPLOAD_PRESET = CLOUDINARY_CONFIG.UPLOAD_PRESET_AUDIO;
+const CLOUDINARY_CLOUD_NAME = CLOUDINARY_CONFIG.CLOUD_NAME;
 
-export const useTrackInfo = (currentUser) => {
-  const [trackData, setTrackData] = useState({
-    title: "",
-    artists: "",
-    description: "",
-    genre: "",
-  });
-  const [imageUrl, setImageUrl] = useState("");
-  const [audioUrl, setAudioUrl] = useState("");
+export const useTrackInfo = (
+  audioFile,
+  trackNumber,
+  totalTracks,
+  albumData,
+  existingAlbumId,
+  isMultiUpload,
+  onTrackComplete
+) => {
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  const [trackTitle, setTrackTitle] = useState(
+    audioFile && audioFile.name ? audioFile.name.replace(/\.[^/.]+$/, "") : ""
+  );
+  const [artists, setArtists] = useState([]);
+  const [genre, setGenre] = useState("");
+  const [description, setDescription] = useState("");
+  const [localError, setLocalError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [showGenreDropdown, setShowGenreDropdown] = useState(false);
 
-  const updateTrackData = (field, value) => {
-    setTrackData((prev) => ({ ...prev, [field]: value }));
+  const uploadToCloudinary = async (file, resourceType = "video") => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const uploadPreset = file.type.startsWith("image/")
+      ? CLOUDINARY_CONFIG.UPLOAD_PRESET_IMAGES
+      : CLOUDINARY_CONFIG.UPLOAD_PRESET_AUDIO;
+    formData.append("upload_preset", uploadPreset);
+
+    let actualResourceType = resourceType;
+    if (file.type.startsWith("audio/")) {
+      actualResourceType = "video";
+    } else if (file.type.startsWith("image/")) {
+      actualResourceType = "image";
+    }
+
+    try {
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${actualResourceType}/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(`Upload failed: ${data.error?.message || res.status}`);
+      }
+
+      const data = await res.json();
+
+      if (!data.secure_url) {
+        throw new Error("Upload failed - no URL returned");
+      }
+
+      return data.secure_url;
+    } catch (error) {
+      console.error("Cloudinary upload error:", error);
+      throw new Error("Failed to upload file. Please try again.");
+    }
   };
 
-  const handleGenreSelect = (genre) => {
-    updateTrackData("genre", genre);
-    setShowGenreDropdown(false);
-  };
-
-  const validateForm = () => {
-    if (!trackData.title.trim()) return "Title is required";
-    if (!trackData.artists.trim()) return "Artist is required";
-    if (!imageUrl) return "Cover image is required";
-    if (!audioUrl) return "Audio file is required";
-    return null;
-  };
-
-  const handleSubmit = async () => {
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
+  const handleSubmit = async (imageFile) => {
+    setLocalError("");
+    if (
+      !trackTitle.trim() ||
+      artists.length === 0 ||
+      !genre.trim() ||
+      !description.trim() ||
+      !audioFile ||
+      (!isMultiUpload && !imageFile)
+    ) {
+      setLocalError("Please fill in all fields and select an image.");
+      return;
+    }
+    if (!currentUser) {
+      setLocalError("You must be logged in to upload.");
       return;
     }
 
     setLoading(true);
-    setError("");
-
     try {
+      let uploadedImageUrl;
+      if (isMultiUpload && trackNumber === 1 && albumData?.albumCoverFile) {
+        uploadedImageUrl = await uploadToCloudinary(
+          albumData.albumCoverFile,
+          "image"
+        );
+      } else if (isMultiUpload) {
+        uploadedImageUrl = albumData?.uploadedImageUrl || "/mini-logo.svg";
+      } else {
+        uploadedImageUrl = await uploadToCloudinary(imageFile, "image");
+      }
+
+      const uploadedAudioUrl = await uploadToCloudinary(audioFile, "video");
+
+      let albumId = existingAlbumId;
+      if (isMultiUpload && !existingAlbumId) {
+        const albumDoc = await addDoc(collection(firestore, "albums"), {
+          name: albumData.name,
+          type: albumData.type,
+          artist: albumData.artist,
+          artists: albumData.artists?.map((artist) => artist.username) || [
+            albumData.artist,
+          ],
+          releaseDate: albumData.releaseDate,
+          imageUrl: uploadedImageUrl,
+          userId: currentUser.uid,
+          createdAt: serverTimestamp(),
+        });
+
+        albumId = albumDoc.id;
+        albumData.uploadedImageUrl = uploadedImageUrl;
+      }
+
+      const artistsForDB = artists.map((artist) => artist.username);
+
       await addDoc(collection(firestore, "tracks"), {
-        title: trackData.title.trim(),
-        artists: trackData.artists.split(",").map((artist) => artist.trim()),
-        description: trackData.description.trim(),
-        genre: trackData.genre,
-        imageUrl,
-        audioUrl,
+        title: trackTitle,
+        artists: artistsForDB,
+        genre,
+        description,
+        imageUrl: uploadedImageUrl,
+        audioUrl: uploadedAudioUrl,
         userId: currentUser.uid,
-        createdAt: new Date(),
-        plays: 0,
-        likes: 0,
+        createdAt: serverTimestamp(),
+        albumId: albumId,
+        trackNumber: trackNumber,
       });
 
-      // Reset form
-      setTrackData({ title: "", artists: "", description: "", genre: "" });
-      setImageUrl("");
-      setAudioUrl("");
-
-      return true;
-    } catch (err) {
-      setError("Failed to upload track. Please try again.");
-      return false;
-    } finally {
       setLoading(false);
+
+      if (isMultiUpload && onTrackComplete) {
+        onTrackComplete(trackNumber === 1 ? albumId : null);
+      } else {
+        const timestamp = Date.now();
+        navigate(`/profile?refresh=${timestamp}`);
+      }
+    } catch (err) {
+      setLoading(false);
+      setLocalError("Upload failed. Please try again.");
+      console.error("Upload error:", err);
     }
   };
 
+  useEffect(() => {
+    if (audioFile && audioFile.name) {
+      setTrackTitle(audioFile.name.replace(/\.[^/.]+$/, ""));
+    }
+  }, [audioFile]);
+
   return {
-    trackData,
-    updateTrackData,
-    imageUrl,
-    setImageUrl,
-    audioUrl,
-    setAudioUrl,
+    trackTitle,
+    setTrackTitle,
+    artists,
+    setArtists,
+    genre,
+    setGenre,
+    description,
+    setDescription,
+    localError,
+    setLocalError,
     loading,
-    error,
-    setError,
-    showGenreDropdown,
-    setShowGenreDropdown,
-    genres: GENRES,
-    handleGenreSelect,
     handleSubmit,
-    validateForm,
   };
 };

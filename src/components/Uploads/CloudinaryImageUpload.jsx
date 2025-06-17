@@ -1,8 +1,9 @@
 import { useState } from "react";
 import PrimaryButton from "../ui/Buttons/PrimaryButton";
+import { CLOUDINARY_CONFIG } from "../../constants/uploadLimits";
 
-const CLOUDINARY_UPLOAD_PRESET = "profile_pictures";
-const CLOUDINARY_CLOUD_NAME = "dky8gzzrx";
+const CLOUDINARY_UPLOAD_PRESET = CLOUDINARY_CONFIG.UPLOAD_PRESET_IMAGES;
+const CLOUDINARY_CLOUD_NAME = CLOUDINARY_CONFIG.CLOUD_NAME;
 
 const CloudinaryImageUpload = ({
   onUpload,

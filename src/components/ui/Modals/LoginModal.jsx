@@ -5,13 +5,18 @@ import {
   loginWithEmailAndPassword,
   registerWithEmailAndPassword,
   signInWithGoogle,
-} from "../../../services/auth";
-import { useAuth } from "../../../services/authContext.jsx";
+} from "../../../services/auth/auth";
+import { useAuth } from "../../../services/auth/AuthContext";
 import { useState } from "react";
-import SecondaryInput from "../../ui/Inputs/SecondaryInput";
-import PrimaryButton from "../../ui/Buttons/PrimaryButton";
+import SecondaryInput from "../Inputs/SecondaryInput";
+import PrimaryButton from "../Buttons/PrimaryButton";
 import googleIcon from "../../../assets/icons/google.svg";
 import CloseIcon from "../../../assets/icons/close.svg?react";
+import {
+  VALIDATION_PATTERNS,
+  VALIDATION_MESSAGES,
+} from "../../../constants/validation";
+import { VALIDATION_RULES } from "../../../constants/uploadLimits";
 
 const LoginModal = ({ onClose, initialRegister = false, onRegistered }) => {
   const [isRegister, setIsRegister] = useState(initialRegister);
@@ -19,10 +24,74 @@ const LoginModal = ({ onClose, initialRegister = false, onRegistered }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const handleEmailChange = (e) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    setEmailError("");
+    setError(null);
+    if (newEmail.trim() && !VALIDATION_PATTERNS.EMAIL.test(newEmail)) {
+      setEmailError(VALIDATION_MESSAGES.EMAIL_INVALID);
+    }
+  };
+  const handlePasswordChange = (e) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    setPasswordError("");
+    setError(null);
+    if (
+      isRegister &&
+      newPassword.trim() &&
+      newPassword.length < VALIDATION_RULES.MIN_PASSWORD_LENGTH
+    ) {
+      setPasswordError(
+        `Password must be at least ${VALIDATION_RULES.MIN_PASSWORD_LENGTH} characters`
+      );
+    }
+  };
+  const validateLoginForm = () => {
+    let isValid = true;
+    if (!email.trim()) {
+      setEmailError("Email is required");
+      isValid = false;
+    } else if (!VALIDATION_PATTERNS.EMAIL.test(email)) {
+      setEmailError(VALIDATION_MESSAGES.EMAIL_INVALID);
+      isValid = false;
+    } else {
+      setEmailError("");
+    }
+    if (!password.trim()) {
+      setPasswordError("Password is required");
+      isValid = false;
+    } else if (
+      isRegister &&
+      password.length < VALIDATION_RULES.MIN_PASSWORD_LENGTH
+    ) {
+      setPasswordError(
+        `Password must be at least ${VALIDATION_RULES.MIN_PASSWORD_LENGTH} characters`
+      );
+      isValid = false;
+    } else {
+      setPasswordError("");
+    }
+
+    return isValid;
+  };
+  const handleModeSwitch = () => {
+    setIsRegister((r) => !r);
+    setError(null);
+    setEmailError("");
+    setPasswordError("");
+  };
 
   const handleAuth = async () => {
     setError(null);
     setLoading(true);
+    if (!validateLoginForm()) {
+      setLoading(false);
+      return;
+    }
     try {
       if (isRegister) {
         const userCredential = await registerWithEmailAndPassword(
@@ -42,11 +111,17 @@ const LoginModal = ({ onClose, initialRegister = false, onRegistered }) => {
       if (err.code === "auth/email-already-in-use") {
         setError("This email is already registered. Please log in.");
       } else if (err.code === "auth/invalid-email") {
-        setError("Invalid email address. Please check and try again.");
+        setEmailError("Invalid email address. Please check and try again.");
       } else if (err.code === "auth/wrong-password") {
         setError("Incorrect password. Please try again.");
       } else if (err.code === "auth/user-not-found") {
         setError("Email not found. Please register.");
+      } else if (err.code === "auth/weak-password") {
+        setPasswordError(
+          "Password is too weak. Please use a stronger password."
+        );
+      } else if (err.code === "auth/too-many-requests") {
+        setError("Too many failed attempts. Please try again later.");
       } else {
         setError("Authentication failed. Please try again.");
       }
@@ -73,6 +148,7 @@ const LoginModal = ({ onClose, initialRegister = false, onRegistered }) => {
         onClose();
       }
     } catch (err) {
+      console.error("Google sign-in error:", err);
       setError(err.message || "Google authentication failed");
     }
     setLoading(false);
@@ -100,30 +176,34 @@ const LoginModal = ({ onClose, initialRegister = false, onRegistered }) => {
             : "-Or Log In using your Email-"}
         </p>
         <SecondaryInput
-          type="text"
+          type="email"
           placeholder="Email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={handleEmailChange}
           disabled={loading}
+          error={emailError}
         />
         <SecondaryInput
           type="password"
           placeholder="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={handlePasswordChange}
           disabled={loading}
+          error={passwordError}
         />
-        {error && <p style={{ color: "#ff4343", margin: 0 }}>{error}</p>}
+        {error && <ErrorMessage>{error}</ErrorMessage>}
         <div className="login-container">
-          <PrimaryButton onClick={handleAuth} disabled={loading}>
+          <PrimaryButton
+            onClick={handleAuth}
+            disabled={loading || !!emailError || !!passwordError}
+          >
             {loading ? "Loading..." : isRegister ? "Register" : "Log in"}
           </PrimaryButton>
           <p>Or</p>
           <a
             onClick={(e) => {
               e.preventDefault();
-              setIsRegister((r) => !r);
-              setError(null);
+              handleModeSwitch();
             }}
             style={{ cursor: "pointer" }}
           >
@@ -134,6 +214,13 @@ const LoginModal = ({ onClose, initialRegister = false, onRegistered }) => {
     </Overlay>
   );
 };
+
+const ErrorMessage = styled.p`
+  color: #ff4343;
+  margin: 0;
+  font-size: 14px;
+  text-align: center;
+`;
 
 const Overlay = styled.div`
   position: fixed;

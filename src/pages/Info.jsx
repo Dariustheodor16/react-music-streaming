@@ -2,8 +2,8 @@ import { useState } from "react";
 import Navbar from "../components/blocks/Navbar/Navbar";
 import HeroBlock from "../components/blocks/InfoBlocks/HeroBlock";
 import CardsLayout from "../components/blocks/InfoBlocks/CardsLayout";
-import LoginModal from "../components/blocks/Modals/LoginModal";
-import ProfileSetupModal from "../components/blocks/Modals/ProfileSetupModal";
+import LoginModal from "../components/ui/Modals/LoginModal";
+import ProfileSetupModal from "../components/ui/Modals/ProfileSetupModal";
 
 const Info = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);

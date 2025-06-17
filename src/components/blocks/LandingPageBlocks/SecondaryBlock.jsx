@@ -18,9 +18,9 @@ const SecondaryBlock = ({ openLoginModal, openRegisterModal }) => {
       <div className="cta-overlay">
         <h1>Love what you hear? Dive deeper.</h1>
         <p>Save tacks, follow artists, and build your sound. Free forever.</p>
-        <SecondaryButton onClick={openRegisterModal}>
+        <StyledSecondaryButton onClick={openRegisterModal}>
           Register now
-        </SecondaryButton>
+        </StyledSecondaryButton>
         <div className="login-redirect">
           <p>Already have an account?</p>
           <a onClick={openLoginModal} style={{ cursor: "pointer" }}>
@@ -138,6 +138,17 @@ const ImageContainer = styled.div`
     display: block;
     border-radius: 24px;
   }
+`;
+
+const StyledSecondaryButton = styled(SecondaryButton)`
+  width: 201px !important;
+  height: 54px !important;
+  font-size: 26px !important;
+  font-weight: 200 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center;
 `;
 
 export default SecondaryBlock;

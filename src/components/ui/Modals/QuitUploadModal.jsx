@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import PrimaryButton from "../../ui/Buttons/PrimaryButton";
+import PrimaryButton from "../Buttons/PrimaryButton";
 
 const QuitUploadModal = ({ open, onClose, onQuit }) => {
   if (!open) return null;

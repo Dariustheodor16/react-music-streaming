@@ -1,11 +1,13 @@
 import { useState } from "react";
 import styled from "styled-components";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc } from "firebase/firestore";
 import { firestore } from "../../../services/firebase";
-import SecondaryInput from "../../ui/Inputs/SecondaryInput";
-import PrimaryButton from "../../ui/Buttons/PrimaryButton";
-import ImageFileInput from "../../ui/Inputs/ImageFileInput";
+import SecondaryInput from "../Inputs/SecondaryInput";
+import PrimaryButton from "../Buttons/PrimaryButton";
+import ImageFileInput from "../Inputs/ImageFileInput";
 import CloseIcon from "../../../assets/icons/close.svg?react";
+import { userService } from "../../../services/api/userService";
+import { VALIDATION_MESSAGES } from "../../../constants/validation";
 
 const EditProfileModal = ({ currentProfile, userId, onClose, onUpdate }) => {
   const [displayName, setDisplayName] = useState(
@@ -14,10 +16,43 @@ const EditProfileModal = ({ currentProfile, userId, onClose, onUpdate }) => {
   const [photoURL, setPhotoURL] = useState(currentProfile?.photoURL || "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [displayNameError, setDisplayNameError] = useState("");
+
+  const validateDisplayName = (displayName) => {
+    return displayName && displayName.trim().length > 0;
+  };
+
+  const handleDisplayNameChange = (e) => {
+    const newDisplayName = e.target.value;
+    setDisplayName(newDisplayName);
+    setDisplayNameError("");
+    setError("");
+    if (!newDisplayName.trim()) {
+      setDisplayNameError(VALIDATION_MESSAGES.DISPLAY_NAME_REQUIRED);
+    }
+  };
+
+  const handleDisplayNameBlur = () => {
+    if (!displayName.trim()) {
+      setDisplayNameError(VALIDATION_MESSAGES.DISPLAY_NAME_REQUIRED);
+    }
+  };
+
+  const validateForm = () => {
+    let isValid = true;
+
+    if (!displayName.trim()) {
+      setDisplayNameError(VALIDATION_MESSAGES.DISPLAY_NAME_REQUIRED);
+      isValid = false;
+    } else {
+      setDisplayNameError("");
+    }
+
+    return isValid;
+  };
 
   const handleSave = async () => {
-    if (!displayName.trim()) {
-      setError("Display name is required.");
+    if (!validateForm()) {
       return;
     }
 
@@ -30,10 +65,11 @@ const EditProfileModal = ({ currentProfile, userId, onClose, onUpdate }) => {
         photoURL: photoURL,
       };
 
-      await updateDoc(doc(firestore, "users", userId), updatedData);
+      await userService.updateUserProfile(userId, updatedData);
 
       const updatedProfile = { ...currentProfile, ...updatedData };
       onUpdate(updatedProfile);
+      onClose();
     } catch (err) {
       console.error("Profile update error:", err);
       setError("Failed to update profile. Please try again.");
@@ -58,8 +94,10 @@ const EditProfileModal = ({ currentProfile, userId, onClose, onUpdate }) => {
             <SecondaryInput
               placeholder="Enter your display name"
               value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              onChange={handleDisplayNameChange}
+              onBlur={handleDisplayNameBlur}
               disabled={saving}
+              error={displayNameError}
             />
           </InputSection>
 
@@ -73,12 +111,12 @@ const EditProfileModal = ({ currentProfile, userId, onClose, onUpdate }) => {
           <SecondaryButton onClick={onClose} disabled={saving}>
             Cancel
           </SecondaryButton>
-          <PrimaryButton
+          <SaveChangesButton
             onClick={handleSave}
-            disabled={saving || !displayName.trim()}
+            disabled={saving || !displayName.trim() || !!displayNameError}
           >
             {saving ? "Saving..." : "Save Changes"}
-          </PrimaryButton>
+          </SaveChangesButton>
         </ButtonContainer>
 
         {error && <ErrorText>{error}</ErrorText>}
@@ -190,6 +228,16 @@ const SecondaryButton = styled.button`
     opacity: 0.5;
     cursor: not-allowed;
   }
+`;
+
+const SaveChangesButton = styled(PrimaryButton)`
+  width: 240px !important;
+  height: 54px !important;
+  white-space: nowrap !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center;
 `;
 
 const ErrorText = styled.p`

@@ -1,15 +1,14 @@
-import { useState, useEffect } from "react";
-import {
-  collection,
-  query,
-  where,
-  getCountFromServer,
-} from "firebase/firestore";
-import { firestore } from "../../services/firebase";
+import { useState, useEffect, useCallback } from "react";
+import { trackService } from "../../services/api";
 
 export const useSongsCount = (userId, initialCount = 0) => {
   const [songsCount, setSongsCount] = useState(initialCount);
   const [loading, setLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const refetch = useCallback(() => {
+    setRefreshTrigger((prev) => prev + 1);
+  }, []);
 
   useEffect(() => {
     const fetchSongsCount = async () => {
@@ -19,21 +18,26 @@ export const useSongsCount = (userId, initialCount = 0) => {
       }
 
       try {
-        const q = query(
-          collection(firestore, "tracks"),
-          where("userId", "==", userId)
-        );
-        const snapshot = await getCountFromServer(q);
-        setSongsCount(snapshot.data().count);
+        const tracks = await trackService.getTracksByUserId(userId);
+        const count = tracks.filter(
+          (track) =>
+            track.artists &&
+            track.artists.length > 0 &&
+            track.title &&
+            track.audioUrl
+        ).length;
+
+        setSongsCount(count);
       } catch (error) {
         console.error("Error fetching songs count:", error);
+        setSongsCount(0);
       } finally {
         setLoading(false);
       }
     };
 
     fetchSongsCount();
-  }, [userId]);
+  }, [userId, refreshTrigger]);
 
-  return { songsCount, loading };
+  return { songsCount, loading, refetch };
 };

@@ -3,8 +3,9 @@ import PrimaryButton from "../../ui/Buttons/PrimaryButton";
 import UploadIcon from "../../../assets/icons/upload.svg?react";
 import CloseIcon from "../../../assets/icons/close.svg?react";
 import styled from "styled-components";
-import QuitUploadModal from "../Modals/QuitUploadModal";
+import QuitUploadModal from "../../ui/Modals/QuitUploadModal";
 import { useFileUpload } from "../../../hooks/upload-hooks";
+import { useNavigate } from "react-router-dom";
 
 const allowedTypes = [
   "audio/wav",
@@ -20,6 +21,7 @@ const allowedTypes = [
 const AudioUpload = ({ onUploaded }) => {
   const [showQuitModal, setShowQuitModal] = useState(false);
   const fileInputRef = useRef();
+  const navigate = useNavigate();
 
   const {
     file,
@@ -34,6 +36,15 @@ const AudioUpload = ({ onUploaded }) => {
   const handleNext = () => {
     if (file && onUploaded) {
       onUploaded(file);
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 1) {
+      onUploaded(files);
+    } else if (files.length === 1) {
+      onUploaded(files[0]);
     }
   };
 
@@ -62,10 +73,11 @@ const AudioUpload = ({ onUploaded }) => {
             <SubText>WAV, MP3, OGG, AAC, FLAC. Max 10MB.</SubText>
             <input
               type="file"
-              accept="audio/wav,audio/mp3,audio/ogg,audio/aac,audio/flac"
+              accept="audio/*"
+              multiple
               style={{ display: "none" }}
               ref={fileInputRef}
-              onChange={handleFileChange}
+              onChange={handleFileSelect}
             />
             {file && <FileName>Selected: {file.name}</FileName>}
             {error && <ErrorMsg>{error}</ErrorMsg>}
@@ -79,6 +91,11 @@ const AudioUpload = ({ onUploaded }) => {
             </BrowseLink>
           </DashedContent>
         </DashedBox>
+        <InfoText>
+          Drag & drop your audio file here or click to browse
+          <br />
+          <small>Select multiple files to create an album or EP</small>
+        </InfoText>
       </Content>
       <NextButtonContainer>
         <PrimaryButton
@@ -92,9 +109,7 @@ const AudioUpload = ({ onUploaded }) => {
       <QuitUploadModal
         open={showQuitModal}
         onClose={() => setShowQuitModal(false)}
-        onQuit={() => {
-          window.location.href = "/home";
-        }}
+        onQuit={() => navigate("/home")}
       />
     </Container>
   );
@@ -251,6 +266,20 @@ const BrowseLink = styled.button`
 
   &:hover {
     color: #ff6666;
+  }
+`;
+
+const InfoText = styled.div`
+  color: #d9d9d9;
+  font-size: 1rem;
+  text-align: center;
+  margin-top: 16px;
+
+  small {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.8rem;
+    color: #888;
   }
 `;
 

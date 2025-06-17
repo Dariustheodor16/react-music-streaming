@@ -1,8 +1,8 @@
+import { useNavigate } from "react-router-dom";
 import styled, { keyframes } from "styled-components";
-import { useAudio } from "../../services/audioContext";
+import { useAudio } from "../../services/AudioContext";
 import { useEffect, useState, useRef } from "react";
 import {
-  useLikeState,
   useDragging,
   useVolumeControl,
   useProgressControl,
@@ -23,8 +23,13 @@ import {
   VolumeIconStyled,
   VolumeMutedIconStyled,
 } from "../../components/ui/Icons/ControlBarIcons";
+import { useLikes } from "../../services/LikeContext";
+import { getRepeatButtonInfo } from "../../utils/repeatUtils";
+import AddToPlaylistModal from "../ui/Modals/AddToPlaylistModal";
 
 const ControlBar = () => {
+  const navigate = useNavigate();
+
   const {
     currentSong,
     isPlaying,
@@ -36,7 +41,13 @@ const ControlBar = () => {
     setVolume,
     playNext,
     playPrevious,
+    isShuffled,
+    toggleShuffle,
+    repeatMode,
+    toggleRepeat,
   } = useAudio();
+
+  const { isLiked, toggleLike } = useLikes();
 
   const progressBarRef = useRef(null);
   const volumeBarRef = useRef(null);
@@ -45,13 +56,6 @@ const ControlBar = () => {
 
   const { isVisible } = useControlBarVisibility(currentSong);
   const { formatTime } = useTimeFormatter();
-  const {
-    liked,
-    brokenHover,
-    handleHeartClick,
-    handleMouseEnter,
-    handleMouseLeave,
-  } = useLikeState();
   const { toggleMute, calculateVolumeFromEvent } = useVolumeControl(
     volume,
     setVolume
@@ -91,6 +95,8 @@ const ControlBar = () => {
 
   const [titleScrollDistance, setTitleScrollDistance] = useState(0);
   const [artistScrollDistance, setArtistScrollDistance] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   useEffect(() => {
     if (!currentSong) return;
@@ -112,6 +118,80 @@ const ControlBar = () => {
 
   if (!currentSong) return null;
 
+  const liked = currentSong ? isLiked(currentSong.id) : false;
+
+  const handleHeartClick = () => {
+    if (currentSong) {
+      toggleLike(currentSong.id);
+    }
+  };
+
+  const repeatButtonInfo = getRepeatButtonInfo(repeatMode);
+
+  const handleSongClick = () => {
+    if (currentSong?.id) {
+      navigate(`/song/${currentSong.id}`);
+    }
+  };
+
+  const handleArtistClick = async () => {
+    if (!currentSong?.id) return;
+
+    try {
+      const { trackService } = await import("../../services/api");
+      const trackData = await trackService.getTrackById(currentSong.id);
+
+      if (trackData?.uploadedBy) {
+        const { userService } = await import("../../services/api");
+        const userData = await userService.getUserById(trackData.uploadedBy);
+
+        if (userData?.username) {
+          navigate(`/profile/${userData.username}`);
+          return;
+        }
+      }
+
+      if (currentSong.artist) {
+        const { userService } = await import("../../services/api");
+
+        try {
+          const users = await userService.searchUsers(currentSong.artist, 10);
+
+          if (users && users.length > 0) {
+            const matchingUser = users.find(
+              (user) =>
+                user.displayName === currentSong.artist ||
+                user.username === currentSong.artist ||
+                user.displayName?.toLowerCase() ===
+                  currentSong.artist?.toLowerCase() ||
+                user.username?.toLowerCase() ===
+                  currentSong.artist?.toLowerCase()
+            );
+
+            if (matchingUser?.username) {
+              navigate(`/profile/${matchingUser.username}`);
+              return;
+            }
+          }
+        } catch (searchError) {
+          console.warn("Could not search for artist:", searchError);
+        }
+      }
+
+      if (currentSong.artist) {
+        navigate(`/search?q=${encodeURIComponent(currentSong.artist)}`);
+      } else {
+        console.log("No artist information available");
+      }
+    } catch (error) {
+      console.error("Error navigating to artist:", error);
+
+      if (currentSong.artist) {
+        navigate(`/search?q=${encodeURIComponent(currentSong.artist)}`);
+      }
+    }
+  };
+
   return (
     <Bar $isVisible={isVisible}>
       <BarContent>
@@ -122,6 +202,8 @@ const ControlBar = () => {
               ref={titleRef}
               $isLong={isTitleLong}
               $scrollDistance={titleScrollDistance}
+              onClick={handleSongClick}
+              $clickable={true}
             >
               {currentSong.name || "Song name"}
             </SongTitle>
@@ -129,6 +211,8 @@ const ControlBar = () => {
               ref={artistRef}
               $isLong={isArtistLong}
               $scrollDistance={artistScrollDistance}
+              onClick={handleArtistClick}
+              $clickable={true}
             >
               {currentSong.artist || "Artist name"}
             </SongArtist>
@@ -137,9 +221,13 @@ const ControlBar = () => {
 
         <CenterSection>
           <Controls>
-            <IconButton>
+            <ShuffleButton
+              $active={isShuffled}
+              onClick={toggleShuffle}
+              title={isShuffled ? "Disable shuffle" : "Enable shuffle"}
+            >
               <ShuffleIcon />
-            </IconButton>
+            </ShuffleButton>
             <IconButton onClick={playPrevious}>
               <SwitchIconStyled />
             </IconButton>
@@ -149,9 +237,16 @@ const ControlBar = () => {
             <IconButton onClick={playNext}>
               <SwitchIconFlipped />
             </IconButton>
-            <IconButton>
+            <RepeatButton
+              $active={repeatButtonInfo.active}
+              onClick={toggleRepeat}
+              title={repeatButtonInfo.title}
+            >
               <RepeatIcon />
-            </IconButton>
+              {repeatButtonInfo.showOne && (
+                <RepeatOneIndicator>1</RepeatOneIndicator>
+              )}
+            </RepeatButton>
           </Controls>
 
           <ProgressSection>
@@ -174,27 +269,23 @@ const ControlBar = () => {
         </CenterSection>
 
         <RightIcons>
-          {!liked ? (
-            <HeartButton onClick={handleHeartClick}>
-              <HeartIcon />
-            </HeartButton>
-          ) : (
-            <HeartContainer
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-            >
-              {!brokenHover ? (
-                <HeartButton onClick={handleHeartClick}>
-                  <FilledHeartIconStyled />
-                </HeartButton>
+          <HeartButton
+            onClick={handleHeartClick}
+            $liked={liked}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+          >
+            {liked ? (
+              isHovered ? (
+                <BrokenHeartIconStyled />
               ) : (
-                <HeartButton onClick={handleHeartClick}>
-                  <BrokenHeartIconStyled />
-                </HeartButton>
-              )}
-            </HeartContainer>
-          )}
-          <IconButton>
+                <FilledHeartIconStyled />
+              )
+            ) : (
+              <HeartIcon />
+            )}
+          </HeartButton>
+          <IconButton onClick={() => setShowPlaylistModal(true)}>
             <AddPlaylistIcon />
           </IconButton>
           <VolumeSection>
@@ -216,9 +307,58 @@ const ControlBar = () => {
           </VolumeSection>
         </RightIcons>
       </BarContent>
+
+      <AddToPlaylistModal
+        isOpen={showPlaylistModal}
+        onClose={() => setShowPlaylistModal(false)}
+        songId={currentSong?.id}
+        songName={currentSong?.name}
+      />
     </Bar>
   );
 };
+
+const IconButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #585858;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  transition: all 0.2s ease;
+  border-radius: 50%;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    fill: #585858;
+    transition: all 0.2s ease;
+  }
+
+  &:hover {
+    color: #ff4343;
+    transform: scale(1.1);
+
+    svg {
+      fill: #ff4343;
+    }
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  ${({ $active }) =>
+    $active &&
+    `
+    svg path {
+      fill: #fff !important;
+    }
+  `}
+`;
 
 const slideUp = keyframes`
   from {
@@ -257,7 +397,6 @@ const Bar = styled.div`
     cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 
   box-shadow: 0 -4px 5px rgba(0, 0, 0, 0.3);
-
   backdrop-filter: blur(5px);
   background: rgba(25, 25, 25, 0.95);
 `;
@@ -342,6 +481,12 @@ const SongTitle = styled.div`
   width: ${({ $isLong }) => ($isLong ? "auto" : "100%")};
   overflow: visible;
   position: relative;
+  cursor: ${({ $clickable }) => ($clickable ? "pointer" : "default")};
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: ${({ $clickable }) => ($clickable ? "#ff4343" : "#fff")};
+  }
 
   &::after {
     content: "";
@@ -387,6 +532,12 @@ const SongArtist = styled.div`
   width: ${({ $isLong }) => ($isLong ? "auto" : "100%")};
   overflow: visible;
   position: relative;
+  cursor: ${({ $clickable }) => ($clickable ? "pointer" : "default")};
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: ${({ $clickable }) => ($clickable ? "#ff4343" : "#d9d9d9")};
+  }
 
   &::after {
     content: "";
@@ -596,17 +747,13 @@ const HeartButton = styled.button`
   svg {
     width: 24px;
     height: 24px;
-    fill: #fff;
+    fill: ${({ $liked }) => ($liked ? "#ff4343" : "#fff")};
     transition: all 0.2s ease;
   }
 
   &:hover {
     transform: scale(1.1);
     background: rgba(255, 255, 255, 0.1);
-
-    svg {
-      fill: #ff4343;
-    }
   }
 
   &:active {
@@ -695,39 +842,6 @@ const VolumeCircle = styled.div`
   }
 `;
 
-const IconButton = styled.button`
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: ${({ active }) => (active ? "#ff4343" : "#585858")};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  transition: all 0.2s ease;
-
-  svg {
-    width: 20px;
-    height: 20px;
-    fill: ${({ active }) => (active ? "#ff4343" : "#585858")};
-    transition: all 0.2s ease;
-  }
-
-  &:hover {
-    color: #ff4343;
-    transform: scale(1.1);
-
-    svg {
-      fill: #ff4343;
-    }
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-`;
-
 const PlayButton = styled(IconButton)`
   width: 50px;
   height: 50px;
@@ -740,15 +854,90 @@ const PlayButton = styled(IconButton)`
 
   &:hover {
     transform: scale(1.05);
-
-    svg {
-      fill: #ff4343;
-    }
   }
 
   &:active {
     transform: scale(0.95);
   }
+`;
+
+const ShuffleButton = styled(IconButton)`
+  position: relative;
+
+  svg path {
+    fill: ${({ $active }) => ($active ? "#fff" : "#585858")} !important;
+    transition: all 0.2s ease;
+  }
+
+  &:hover svg path {
+    fill: #ff4343 !important;
+  }
+
+  &:after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 67, 67, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.3s ease;
+    z-index: 0;
+  }
+
+  &:hover:after {
+    transform: translate(-50%, -50%) scale(1);
+  }
+`;
+
+const RepeatButton = styled(IconButton)`
+  position: relative;
+
+  svg path {
+    fill: ${({ $active }) => ($active ? "#fff" : "#585858")} !important;
+    transition: all 0.2s ease;
+  }
+
+  &:hover svg path {
+    fill: #ff4343 !important;
+  }
+
+  &:after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 67, 67, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.3s ease;
+    z-index: 0;
+  }
+
+  &:hover:after {
+    transform: translate(-50%, -50%) scale(1);
+  }
+`;
+
+const RepeatOneIndicator = styled.span`
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ff4343;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
 `;
 
 export default ControlBar;
