@@ -94,10 +94,16 @@ const LibraryDisplay = () => {
           (activeTab === "likes" || activeTab === "browse") &&
           likedSongs.size > 0
         ) {
-          const likedSongIds = Array.from(likedSongs);
+          const likedSongIds = Array.from(likedSongs).reverse();
           const tracks = await trackService.getTracksByIds(likedSongIds);
+          const idToTrack = Object.fromEntries(
+            tracks.map((track) => [track.id, track])
+          );
+          const orderedTracks = likedSongIds
+            .map((id) => idToTrack[id])
+            .filter(Boolean);
           const tracksWithDuration =
-            await durationService.getMultipleTrackDurations(tracks);
+            await durationService.getMultipleTrackDurations(orderedTracks);
 
           const songs = tracksWithDuration.map((track) => ({
             id: track.id,

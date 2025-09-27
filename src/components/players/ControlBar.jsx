@@ -26,6 +26,8 @@ import {
 import { useLikes } from "../../services/LikeContext";
 import { getRepeatButtonInfo } from "../../utils/repeatUtils";
 import AddToPlaylistModal from "../ui/Modals/AddToPlaylistModal";
+import { useAuth } from "../../services/auth/AuthContext";
+import { useLoginModal } from "../../services/auth/LoginModalContext";
 
 const ControlBar = () => {
   const navigate = useNavigate();
@@ -48,6 +50,8 @@ const ControlBar = () => {
   } = useAudio();
 
   const { isLiked, toggleLike } = useLikes();
+  const { userLoggedIn } = useAuth();
+  const { openLoginModal } = useLoginModal();
 
   const progressBarRef = useRef(null);
   const volumeBarRef = useRef(null);
@@ -121,9 +125,21 @@ const ControlBar = () => {
   const liked = currentSong ? isLiked(currentSong.id) : false;
 
   const handleHeartClick = () => {
+    if (!userLoggedIn) {
+      openLoginModal();
+      return;
+    }
     if (currentSong) {
       toggleLike(currentSong.id);
     }
+  };
+
+  const handleAddToPlaylist = () => {
+    if (!userLoggedIn) {
+      openLoginModal();
+      return;
+    }
+    setShowPlaylistModal(true);
   };
 
   const repeatButtonInfo = getRepeatButtonInfo(repeatMode);
@@ -285,7 +301,7 @@ const ControlBar = () => {
               <HeartIcon />
             )}
           </HeartButton>
-          <IconButton onClick={() => setShowPlaylistModal(true)}>
+          <IconButton onClick={handleAddToPlaylist}>
             <AddPlaylistIcon />
           </IconButton>
           <VolumeSection>

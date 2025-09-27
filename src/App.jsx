@@ -16,31 +16,34 @@ import Search from "./pages/Search";
 import Dashboard from "./pages/Dashboard";
 import PlaylistPage from "./pages/PlaylistPage";
 import ScrollToTop from "./components/ui/ScrollToTop";
+import { LoginModalProvider } from "./services/auth/LoginModalContext";
 
 function App() {
   return (
-    <AudioProvider>
-      <LikeProvider>
-        <PlaylistProvider>
-          <ScrollToTop />
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/info" element={<Info />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/upload" element={<Upload />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/profile/:username" element={<UserProfile />} />
-            <Route path="/album/:albumId" element={<AlbumPage />} />
-            <Route path="/song/:songId" element={<SongPage />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/playlist/:playlistId" element={<PlaylistPage />} />
-          </Routes>
-          <ControlBar />
-        </PlaylistProvider>
-      </LikeProvider>
-    </AudioProvider>
+    <LoginModalProvider>
+      <AudioProvider>
+        <LikeProvider>
+          <PlaylistProvider>
+            <ScrollToTop />
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/info" element={<Info />} />
+              <Route path="/library" element={<Library />} />
+              <Route path="/upload" element={<Upload />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/:username" element={<UserProfile />} />
+              <Route path="/album/:albumId" element={<AlbumPage />} />
+              <Route path="/song/:songId" element={<SongPage />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/playlist/:playlistId" element={<PlaylistPage />} />
+            </Routes>
+            <ControlBar />
+          </PlaylistProvider>
+        </LikeProvider>
+      </AudioProvider>
+    </LoginModalProvider>
   );
 }
 

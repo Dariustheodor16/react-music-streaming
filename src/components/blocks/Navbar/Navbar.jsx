@@ -62,6 +62,7 @@ const Navbar = ({ openLoginModal, openRegisterModal }) => {
         const allSuggestions = [
           ...artists.map((artist) => ({
             id: artist.id,
+            username: artist.username,
             type: "artist",
             title: artist.displayName,
             subtitle: `Artist • ${artist.followers || 0} followers`,
@@ -129,11 +130,13 @@ const Navbar = ({ openLoginModal, openRegisterModal }) => {
   };
 
   const handleSuggestionClick = (suggestion) => {
-    if (suggestion.type === "artist") {
-      navigate(`/search?q=${encodeURIComponent(suggestion.title)}`);
-    } else if (suggestion.type === "album") {
-      navigate(`/search?q=${encodeURIComponent(suggestion.title)}`);
-    } else if (suggestion.type === "song") {
+    if (suggestion.type === "artist" && suggestion.username) {
+      navigate(`/profile/${suggestion.username}`);
+    } else if (suggestion.type === "song" && suggestion.id) {
+      navigate(`/song/${suggestion.id}`);
+    } else if (suggestion.type === "album" && suggestion.id) {
+      navigate(`/album/${suggestion.id}`);
+    } else {
       navigate(`/search?q=${encodeURIComponent(suggestion.title)}`);
     }
     setShowDropdown(false);

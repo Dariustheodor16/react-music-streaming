@@ -35,8 +35,9 @@ const PrimaryInput = () => {
           ...artists.map((artist) => ({
             type: "artist",
             id: artist.id,
+            username: artist.username,
             title: artist.displayName || artist.username,
-            subtitle: `${artist.songsCount || 0} songs`,
+            subtitle: `Artist • ${artist.followers || 0} followers`,
             image: artist.photoURL,
           })),
           ...albums.map((album) => ({
@@ -92,7 +93,7 @@ const PrimaryInput = () => {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/?q=${encodeURIComponent(searchQuery.trim())}`);
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setShowDropdown(false);
       setSelectedIndex(-1);
     }
@@ -104,10 +105,15 @@ const PrimaryInput = () => {
   };
 
   const handleSuggestionClick = (suggestion) => {
-    navigate(`/?q=${encodeURIComponent(suggestion.title)}`);
-    setShowDropdown(false);
-    setSelectedIndex(-1);
-    setSearchQuery("");
+    if (suggestion.type === "artist" && suggestion.username) {
+      navigate(`/profile/${suggestion.username}`);
+    } else if (suggestion.type === "song" && suggestion.id) {
+      navigate(`/song/${suggestion.id}`);
+    } else if (suggestion.type === "album" && suggestion.id) {
+      navigate(`/album/${suggestion.id}`);
+    } else {
+      navigate(`/search?q=${encodeURIComponent(suggestion.title)}`);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -200,7 +206,9 @@ const PrimaryInput = () => {
               ))}
               <DropdownFooter
                 onClick={() => {
-                  navigate(`/?q=${encodeURIComponent(searchQuery.trim())}`);
+                  navigate(
+                    `/search?q=${encodeURIComponent(searchQuery.trim())}`
+                  );
                   setShowDropdown(false);
                 }}
               >
